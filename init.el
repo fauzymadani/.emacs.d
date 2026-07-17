@@ -1,22 +1,22 @@
 ;; -*- lexical-binding: t; -*-
 
-;; === Caps Lock → Ctrl (only while Emacs is open) ===
+;; Caps Lock → Ctrl (only while Emacs is open)
 (shell-command "setxkbmap -option ctrl:nocaps")
 (add-hook 'kill-emacs-hook (lambda () (shell-command "setxkbmap -option")))
 
-;; === Font ===
+;; Font
 (set-face-attribute 'default nil :height 140)
 (set-face-attribute 'variable-pitch nil :family "Merriweather" :height 1.10)
 (setf (alist-get "Merriweather"      face-font-rescale-alist nil nil #'equal) 0.88)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
-;; === UI cleanup ===
+;; UI cleanup
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (fringe-mode 0)
 
-;; === Package management ===
+;; Package management
 ;; Must be before package-initialize so org fork shadows built-in org
 (add-to-list 'load-path "~/.emacs.d/elpa/org-mode/lisp/")
 (require 'package)
@@ -25,14 +25,13 @@
         ("gnu"   . "https://elpa.gnu.org/packages/")))
 (package-initialize)
 
-;; Bootstrap use-package if not installed
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-;; === Org + LaTeX preview ===
+;; Org + LaTeX preview
 (use-package org
   :load-path "~/.emacs.d/elpa/org-mode/lisp/")
 
@@ -76,7 +75,7 @@
   (plist-put org-latex-preview-appearance-options :zoom
              (+ (/ (face-attribute 'default :height) 100.0) 0.15)))
 
-;; === Org appearance ===
+;; Org appearance
 (with-eval-after-load 'org-src
   (require 'latex)
   (setf (alist-get "latex" org-src-lang-modes nil nil #'equal) 'LaTeX)
@@ -96,7 +95,7 @@
   (add-hook 'org-mode-hook #'visual-line-mode)
   (add-hook 'org-mode-hook (lambda () (display-line-numbers-mode -1))))
 
-;; === Packages ===
+;; Packages
 (use-package auctex)
 
 (use-package cdlatex
@@ -114,8 +113,7 @@
                                     (?t "\\text" nil t nil nil))
         cdlatex-env-alist '(("align"    "\\begin{align}\n?\n\\end{align}"    nil)
                             ("equation" "\\begin{equation}\n?\n\\end{equation}" nil)
-                            ("pmatrix"  "\\begin{pmatrix}\n?\n\\end{pmatrix}"  nil))
-        ))
+                            ("pmatrix"  "\\begin{pmatrix}\n?\n\\end{pmatrix}"  nil))))
 
 (use-package org-modern
   :hook (org-mode . org-modern-mode))
@@ -151,9 +149,9 @@
   :config (marginalia-mode))
 
 (use-package consult
-  :bind (("C-x b"   . consult-buffer)
-         ("C-s"     . consult-line)
-         ("M-g g"   . consult-goto-line)))
+  :bind (("C-x b" . consult-buffer)
+         ("C-s"   . consult-line)
+         ("M-g g" . consult-goto-line)))
 
 (use-package embark
   :bind (("C-." . embark-act)
@@ -165,12 +163,12 @@
 (use-package yasnippet
   :config (yas-global-mode 1))
 
-;; === Theme ===
+;; Theme
 (use-package modus-themes
   :config
   (load-theme 'modus-operandi t))
 
-;; === Basic quality of life ===
+;; Basic quality of life
 (setq make-backup-files nil)
 (setq auto-save-default nil)
 (global-display-line-numbers-mode t)

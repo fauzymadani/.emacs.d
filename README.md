@@ -17,6 +17,19 @@
 - **Consult + Embark + Marginalia** — enhanced navigation and search
 - **YASnippet** — math snippets (`frac`, `int`, `sum`, `lim`, `mat`, `begin`)
 
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `C-c i` | Insert inline math `\(\)` |
+| `C-c d` | Insert display math `\[\]` |
+| `C-c a` | Insert align environment |
+| `C-s` | Live search in buffer (consult) |
+| `C-x b` | Switch buffer with preview (consult) |
+| `M-g g` | Go to line (consult) |
+| `C-.` | Action menu on thing at point (embark) |
+| `C-;` | Quick action on thing at point (embark-dwim) |
+
 ## Snippets
 
 Snippet files live in `snippets/org-mode/`. Add new ones by dropping files there.
