@@ -5,7 +5,7 @@
 (add-hook 'kill-emacs-hook (lambda () (shell-command "setxkbmap -option")))
 
 ;; === Font ===
-(set-face-attribute 'default nil :height 110)
+(set-face-attribute 'default nil :height 140)
 (set-face-attribute 'variable-pitch nil :family "Merriweather" :height 1.10)
 (setf (alist-get "Merriweather"      face-font-rescale-alist nil nil #'equal) 0.88)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
@@ -48,8 +48,8 @@
 
 (defun my/org-insert-display-math ()
   (interactive)
-  (insert "\\[\n\n\\]")
-  (forward-line -1))
+  (insert "\\[\\]")
+  (backward-char 2))
 
 (defun my/org-insert-align ()
   (interactive)
@@ -146,6 +146,24 @@
 (use-package orderless
   :config
   (setq completion-styles '(orderless basic)))
+
+(use-package marginalia
+  :config (marginalia-mode))
+
+(use-package consult
+  :bind (("C-x b"   . consult-buffer)
+         ("C-s"     . consult-line)
+         ("M-g g"   . consult-goto-line)))
+
+(use-package embark
+  :bind (("C-." . embark-act)
+         ("C-;" . embark-dwim)))
+
+(use-package embark-consult
+  :after (embark consult))
+
+(use-package yasnippet
+  :config (yas-global-mode 1))
 
 ;; === Theme ===
 (use-package modus-themes

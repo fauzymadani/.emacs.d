@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: \int_{}^{}
+# key: int
+# --
+\int_{${1:-\infty}}^{${2:\infty}} ${3:f(x)} \, d${4:x}$0
