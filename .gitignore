@@ -1,0 +1,7 @@
+elpa/
+eln-cache/
+recentf
+projects
+auto-save-list/
+transient/
+*.elc
