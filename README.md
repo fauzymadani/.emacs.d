@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://www.gnu.org/software/emacs/images/emacs.png" height="80" alt="Emacs">
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://orgmode.org/img/org-mode-unicorn.svg" height="80" alt="Org Mode">
+  <img src="https://orgmode.org/resources/img/org-mode-unicorn.svg" height="80" alt="Org Mode">
 
   # .emacs.d
 
