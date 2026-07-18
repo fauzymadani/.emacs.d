@@ -5,9 +5,8 @@
 (add-hook 'kill-emacs-hook (lambda () (shell-command "setxkbmap -option")))
 
 ;; Font
-(set-face-attribute 'default nil :height 140)
-(set-face-attribute 'variable-pitch nil :family "Merriweather" :height 1.10)
-(setf (alist-get "Merriweather"      face-font-rescale-alist nil nil #'equal) 0.88)
+(set-face-attribute 'default nil :family "Courier Prime" :height 115)
+(set-face-attribute 'variable-pitch nil :family "Charis" :height 130)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 ;; UI cleanup
@@ -89,6 +88,7 @@
     (set-face-attribute (car face) nil :weight 'bold :height (cdr face)))
   (setq org-highlight-latex-and-related '(native latex)
         org-pretty-entities t
+        org-hide-emphasis-markers t
         org-hide-leading-stars t
         org-ellipsis " ▾"
         org-startup-folded 'nofold)
@@ -118,13 +118,18 @@
 (use-package org-modern
   :hook (org-mode . org-modern-mode))
 
+(use-package org-appear
+  :vc (:url "https://github.com/awth13/org-appear")
+  :hook (org-mode . org-appear-mode))
+
 (use-package mixed-pitch
-  :hook (org-mode . mixed-pitch-mode))
+  :hook (org-mode . mixed-pitch-mode)
+  :config (setq mixed-pitch-set-height t))
 
 (use-package olivetti
   :hook (org-mode . olivetti-mode)
   :config
-  (setq olivetti-body-width 80)
+  (setq olivetti-body-width 68)
   (set-face-attribute 'olivetti-fringe nil :background (face-attribute 'default :background)))
 
 (use-package dashboard
@@ -197,7 +202,7 @@
  '(package-selected-packages
    '(async auctex cdlatex corfu dashboard embark-consult marginalia
            mixed-pitch modus-themes modusregel mood-line olivetti
-           orderless org-modern vertico yasnippet))
+           orderless org-appear org-modern vertico yasnippet))
  '(package-vc-selected-packages
    '((org-mode :url "https://code.tecosaur.net/tec/org-mode" :branch
                "dev"))))
