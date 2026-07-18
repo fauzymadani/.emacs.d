@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: \text{rank}
+# key: rank
+# --
+\text{rank}(${1:A})$0

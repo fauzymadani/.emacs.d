@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: transpose
+# key: trans
+# --
+${1:A}^{\top}$0

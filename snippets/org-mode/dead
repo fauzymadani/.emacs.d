@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: DEADLINE
+# key: dead
+# --
+DEADLINE: <${1:`(format-time-string "%Y-%m-%d %a")`}>$0

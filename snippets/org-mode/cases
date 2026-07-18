@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: \begin{cases}
+# key: cases
+# --
+\begin{cases}
+${1:f(x)} & \text{if } ${2:x > 0} \\\\
+${3:g(x)} & \text{otherwise}
+\end{cases}$0

@@ -129,14 +129,19 @@
 
 (use-package dashboard
   :config
-  (setq dashboard-startup-banner 'official)
+  (setq dashboard-startup-banner 'official
+        dashboard-center-content t)
   (dashboard-setup-startup-hook))
 
 (use-package which-key
   :config (which-key-mode))
 
-(use-package mood-line
-  :config (mood-line-mode))
+(use-package modusregel
+  :vc (:url "https://codeberg.org/jjba23/modusregel" :branch "trunk")
+  :config
+  (setq-default mode-line-format modusregel-format)
+  (add-hook 'after-change-major-mode-hook
+            (lambda () (setq mode-line-format modusregel-format))))
 
 (use-package vertico
   :config (vertico-mode))
@@ -166,7 +171,15 @@
 ;; Theme
 (use-package modus-themes
   :config
-  (load-theme 'modus-operandi t))
+  (setq modus-themes-common-palette-overrides
+        '((bg-mode-line-active "#002147")
+          (fg-mode-line-active "#e8e2d9")
+          (bg-mode-line-inactive "#d6cfc4")
+          (border-mode-line-active unspecified)
+          (border-mode-line-inactive unspecified)))
+  (load-theme 'modus-operandi t)
+  (set-face-attribute 'mode-line nil :height 0.8)
+  (set-face-attribute 'mode-line-inactive nil :height 0.8))
 
 ;; Basic quality of life
 (setq make-backup-files nil)
@@ -181,7 +194,10 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages nil)
+ '(package-selected-packages
+   '(async auctex cdlatex corfu dashboard embark-consult marginalia
+           mixed-pitch modus-themes modusregel mood-line olivetti
+           orderless org-modern vertico yasnippet))
  '(package-vc-selected-packages
    '((org-mode :url "https://code.tecosaur.net/tec/org-mode" :branch
                "dev"))))

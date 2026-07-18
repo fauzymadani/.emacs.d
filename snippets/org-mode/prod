@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: \prod_{}^{}
+# key: prod
+# --
+\prod_{${1:i=1}}^{${2:n}} $0

@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: \text{Hom}
+# key: hom
+# --
+\text{Hom}(${1:A}, ${2:B})$0

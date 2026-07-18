@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: quotient group
+# key: quot
+# --
+${1:G}/{${2:H}}$0

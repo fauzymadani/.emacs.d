@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: [[link][desc]]
+# key: link
+# --
+[[${1:url}][${2:description}]]$0

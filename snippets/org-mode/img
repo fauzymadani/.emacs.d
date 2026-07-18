@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: \text{Im}
+# key: img
+# --
+\text{Im}(${1:f})$0

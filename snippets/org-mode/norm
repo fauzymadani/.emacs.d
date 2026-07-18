@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: \|x\|
+# key: norm
+# --
+\|${1:x}\|$0
