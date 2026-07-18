@@ -5,7 +5,7 @@
 (add-hook 'kill-emacs-hook (lambda () (shell-command "setxkbmap -option")))
 
 ;; Font
-(set-face-attribute 'default nil :family "Courier Prime" :height 115)
+(set-face-attribute 'default nil :family "iA Writer Mono V" :height 115 :weight 'medium)
 (set-face-attribute 'variable-pitch nil :family "Charis" :height 130)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
@@ -118,6 +118,23 @@
 (use-package org-modern
   :hook (org-mode . org-modern-mode))
 
+(use-package org-journal
+  :vc (:url "https://github.com/bastibe/org-journal")
+  :bind ("C-c n" . org-journal-new-entry)
+  :config
+  (setq org-journal-dir "~/org/journal/"
+        org-journal-file-format "%Y%m%d.org"
+        org-journal-find-file #'find-file
+        org-journal-enable-encryption t
+        org-crypt-key "fauzymadani3@gmail.com"
+        org-crypt-disable-auto-save t)
+  (add-hook 'find-file-hook
+            (lambda ()
+              (when (string-prefix-p (expand-file-name org-journal-dir)
+                                     (or buffer-file-name ""))
+                (org-decrypt-entries))))
+  (global-set-key (kbd "C-c e") #'org-decrypt-entries))
+
 (use-package org-appear
   :vc (:url "https://github.com/awth13/org-appear")
   :hook (org-mode . org-appear-mode))
@@ -176,13 +193,28 @@
 ;; Theme
 (use-package modus-themes
   :config
-  (setq modus-themes-common-palette-overrides
+  (setq modus-operandi-palette-overrides
         '((bg-mode-line-active "#002147")
           (fg-mode-line-active "#e8e2d9")
           (bg-mode-line-inactive "#d6cfc4")
           (border-mode-line-active unspecified)
           (border-mode-line-inactive unspecified)))
-  (load-theme 'modus-operandi t)
+  (setq modus-vivendi-palette-overrides
+        '((bg-main "#111111")
+          (bg-dim "#1a1a1a")
+          (bg-mode-line-active "#1a2a3a")
+          (fg-mode-line-active "#e8e2d9")
+          (bg-mode-line-inactive "#1f1f1f")
+          (border-mode-line-active unspecified)
+          (border-mode-line-inactive unspecified)))
+  (load-theme 'modus-vivendi t)
+
+  (defun my/toggle-theme ()
+    (interactive)
+    (if (eq (car custom-enabled-themes) 'modus-vivendi)
+        (load-theme 'modus-operandi t)
+      (load-theme 'modus-vivendi t)))
+  (global-set-key (kbd "C-c t") #'my/toggle-theme)
   (set-face-attribute 'mode-line nil :height 0.8)
   (set-face-attribute 'mode-line-inactive nil :height 0.8))
 
@@ -199,10 +231,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(async auctex cdlatex corfu dashboard embark-consult marginalia
-           mixed-pitch modus-themes modusregel mood-line olivetti
-           orderless org-appear org-modern vertico yasnippet))
+ '(package-selected-packages nil)
  '(package-vc-selected-packages
    '((org-mode :url "https://code.tecosaur.net/tec/org-mode" :branch
                "dev"))))
