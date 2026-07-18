@@ -10,7 +10,7 @@
 
 ![preview](preview.png)
 
-https://github.com/fauzymadani/.emacs.d/raw/main/demo.mp4
+https://github.com/user-attachments/assets/79fcb056-3b84-4de0-b281-b8b73a2ab7db
 
 ## Highlights
 
