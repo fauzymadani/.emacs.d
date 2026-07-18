@@ -10,6 +10,8 @@
 
 ![preview](preview.png)
 
+https://github.com/fauzymadani/.emacs.d/raw/main/demo.mp4
+
 ## Highlights
 
 - **Org + LaTeX preview** — tecosaur's org fork with live SVG math rendering
