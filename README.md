@@ -8,6 +8,8 @@
   Personal Emacs config — built for math note-taking with Org mode and LaTeX preview.
 </div>
 
+![preview](preview.png)
+
 ## Highlights
 
 - **Org + LaTeX preview** — tecosaur's org fork with live SVG math rendering
