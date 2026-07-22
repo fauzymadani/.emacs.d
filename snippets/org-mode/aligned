@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: display aligned math
+# key: ali
+# --
+\begin{align*}
+  $1 &= $0
+\end{align*}

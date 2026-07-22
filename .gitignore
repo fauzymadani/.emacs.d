@@ -5,3 +5,11 @@ projects
 auto-save-list/
 transient/
 *.elc
+
+# LaTeX build artifacts
+*.aux
+*.dvi
+*.log
+*.out
+*.fls
+*.fdb_latexmk

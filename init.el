@@ -6,7 +6,7 @@
 
 ;; Font
 (set-face-attribute 'default nil :family "iA Writer Mono V" :height 115 :weight 'medium)
-(set-face-attribute 'variable-pitch nil :family "Charis" :height 130)
+(set-face-attribute 'variable-pitch nil :family "Charis" :height 125)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 ;; UI cleanup
@@ -68,7 +68,9 @@
   (setq org-latex-preview-mode-display-live t
         org-latex-preview-mode-update-delay 0.3
         org-latex-preview-mode-track-inserts t
-        org-latex-preview-persist-expiry 30)
+        org-latex-preview-persist-expiry 30
+        org-latex-preview-process-precompile t
+        org-latex-preview-process-active-indicator nil)
   (plist-put org-format-latex-options :background "Transparent")
   (plist-put org-latex-preview-appearance-options :scale 1.0)
   (plist-put org-latex-preview-appearance-options :zoom
@@ -88,6 +90,7 @@
     (set-face-attribute (car face) nil :weight 'bold :height (cdr face)))
   (setq org-highlight-latex-and-related '(native latex)
         org-pretty-entities t
+        org-pretty-entities-include-sub-superscripts nil
         org-hide-emphasis-markers t
         org-hide-leading-stars t
         org-ellipsis " ▾"
@@ -123,6 +126,7 @@
   :bind ("C-c n" . org-journal-new-entry)
   :config
   (setq org-journal-dir "~/org/journal/"
+        org-journal-file-type 'weekly
         org-journal-file-format "%Y%m%d.org"
         org-journal-find-file #'find-file
         org-journal-enable-encryption t
@@ -190,6 +194,21 @@
 (use-package yasnippet
   :config (yas-global-mode 1))
 
+;; Calc
+(use-package calc
+  :ensure nil
+  :config
+  ;; left-to-right like a normal calculator: 12000/60000*100 = 20, not 2e-3
+  (setq calc-multiplication-has-precedence nil))
+
+(use-package casual
+  :after calc
+  :config
+  (keymap-set calc-mode-map "C-o" #'casual-calc-tmenu)
+  ;; calc-alg-map only exists once calc-ext is loaded
+  (with-eval-after-load 'calc-ext
+    (keymap-set calc-alg-map "C-o" #'casual-calc-tmenu)))
+
 ;; Theme
 (use-package modus-themes
   :config
@@ -216,7 +235,8 @@
       (load-theme 'modus-vivendi t)))
   (global-set-key (kbd "C-c t") #'my/toggle-theme)
   (set-face-attribute 'mode-line nil :height 0.8)
-  (set-face-attribute 'mode-line-inactive nil :height 0.8))
+  (set-face-attribute 'mode-line-inactive nil :height 0.8)
+)
 
 ;; Basic quality of life
 (setq make-backup-files nil)
