@@ -238,6 +238,11 @@
   (set-face-attribute 'mode-line-inactive nil :height 0.8)
 )
 
+;; C / compile
+(global-set-key (kbd "<f5>") #'recompile)   ; rerun last compile, no prompt
+(global-set-key (kbd "C-<f5>") #'compile)   ; edit the command first
+(setq compilation-scroll-output 'first-error)
+
 ;; Basic quality of life
 (setq make-backup-files nil)
 (setq auto-save-default nil)
