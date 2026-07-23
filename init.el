@@ -242,6 +242,11 @@
 (global-set-key (kbd "<f5>") #'recompile)   ; rerun last compile, no prompt
 (global-set-key (kbd "C-<f5>") #'compile)   ; edit the command first
 (setq compilation-scroll-output 'first-error)
+(add-hook 'compilation-filter-hook #'ansi-color-compilation-filter) ; colored gcc/make output
+
+;; From tsoding, but using Emacs 30 built-ins instead of his hand-rolled versions
+(global-set-key (kbd "C-,") #'duplicate-dwim)   ; duplicate line, or region if selected
+(setq confirm-kill-emacs 'y-or-n-p)             ; ask before quitting
 
 ;; Basic quality of life
 (setq make-backup-files nil)
