@@ -249,7 +249,7 @@
                (display-buffer-reuse-window display-buffer-at-bottom)
                (window-height . 0.3)))
 
-;; From tsoding, but using Emacs 30 built-ins instead of his hand-rolled versions
+;; Editing quality of life
 (global-set-key (kbd "C-,") #'duplicate-dwim)   ; duplicate line, or region if selected
 (setq confirm-kill-emacs 'y-or-n-p)             ; ask before quitting
 
@@ -261,18 +261,7 @@
 (electric-pair-mode t)
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages nil)
- '(package-vc-selected-packages
-   '((org-mode :url "https://code.tecosaur.net/tec/org-mode" :branch
-               "dev"))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+
+;; Keep Customize's auto-writes out of init.el
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(load custom-file t)
