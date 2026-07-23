@@ -13,3 +13,4 @@ transient/
 *.out
 *.fls
 *.fdb_latexmk
+bookmarks

@@ -98,6 +98,16 @@
   (add-hook 'org-mode-hook #'visual-line-mode)
   (add-hook 'org-mode-hook (lambda () (display-line-numbers-mode -1))))
 
+;; Quick capture: C-c c drops a TODO into tasks.org from anywhere
+(setq org-capture-templates
+      '(("t" "Task" entry (file "~/org/tasks.org")
+         "* TODO %?\n  SCHEDULED: %t\n")))
+(global-set-key (kbd "C-c c") #'org-capture)
+
+;; Agenda scans these files for TODOs / scheduled / deadlines
+(setq org-agenda-files '("~/org/tasks.org"))
+(global-set-key (kbd "C-x a") #'org-agenda)
+
 ;; Packages
 (use-package auctex)
 
@@ -156,7 +166,8 @@
 (use-package dashboard
   :config
   (setq dashboard-startup-banner 'official
-        dashboard-center-content t)
+        dashboard-center-content t
+        dashboard-items '((recents . 5)))
   (dashboard-setup-startup-hook))
 
 (use-package which-key
@@ -249,9 +260,27 @@
                (display-buffer-reuse-window display-buffer-at-bottom)
                (window-height . 0.3)))
 
+;; In-buffer completion popup (like VSCode's IntelliSense)
+(use-package corfu
+  :init (global-corfu-mode)
+  :config (setq corfu-auto t
+                corfu-auto-delay 0.2
+                corfu-auto-prefix 2))
+
+;; LSP: real C intelligence via clangd (completion, errors, jump-to-def, docs)
+(use-package eglot
+  :ensure nil
+  :hook (c-mode . eglot-ensure))
+;; add (java-mode . eglot-ensure) here + install jdtls when Java starts
+
 ;; Editing quality of life
 (global-set-key (kbd "C-,") #'duplicate-dwim)   ; duplicate line, or region if selected
 (setq confirm-kill-emacs 'y-or-n-p)             ; ask before quitting
+
+;; Window / dired navigation
+(windmove-default-keybindings)         ; Shift+arrow to move between windows
+(setq dired-dwim-target t)             ; copy/move defaults to the other dired pane
+(setq dired-listing-switches "-alh")   ; human-readable file sizes in dired
 
 ;; Basic quality of life
 (setq make-backup-files nil)
