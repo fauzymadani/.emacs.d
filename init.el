@@ -5,7 +5,7 @@
 (add-hook 'kill-emacs-hook (lambda () (shell-command "setxkbmap -option")))
 
 ;; Font
-(set-face-attribute 'default nil :family "iA Writer Mono V" :height 115 :weight 'medium)
+(set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 115 :weight 'medium)
 (set-face-attribute 'variable-pitch nil :family "Charis" :height 125)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
@@ -243,6 +243,11 @@
 (global-set-key (kbd "C-<f5>") #'compile)   ; edit the command first
 (setq compilation-scroll-output 'first-error)
 (add-hook 'compilation-filter-hook #'ansi-color-compilation-filter) ; colored gcc/make output
+;; compile output always in a window at the bottom, ~30% tall
+(add-to-list 'display-buffer-alist
+             '("\\*compilation\\*"
+               (display-buffer-reuse-window display-buffer-at-bottom)
+               (window-height . 0.3)))
 
 ;; From tsoding, but using Emacs 30 built-ins instead of his hand-rolled versions
 (global-set-key (kbd "C-,") #'duplicate-dwim)   ; duplicate line, or region if selected
