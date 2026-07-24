@@ -1,0 +1,13 @@
+# -*- mode: snippet -*-
+# name: exercise problem block
+# key: prob
+# --
+* ${1:1}.
+${2:statement}
+
+** Solution
+\[
+$0
+\]
+
+** Answer

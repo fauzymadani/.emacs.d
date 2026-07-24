@@ -104,8 +104,34 @@
          "* TODO %?\n  SCHEDULED: %t\n")))
 (global-set-key (kbd "C-c c") #'org-capture)
 
+;; C-c x opens today's math exercise file, templated on first creation
+(defvar my/exercise-dir "~/Notes/Exercise/"
+  "Where math exercise files live.")
+
+(defun my/new-exercise ()
+  "Open today's exercise file in `my/exercise-dir', templating it if new."
+  (interactive)
+  (make-directory my/exercise-dir t)
+  (find-file (expand-file-name (format-time-string "exercise-%Y-%m-%d.org")
+                               my/exercise-dir))
+  (when (zerop (buffer-size))
+    (insert (format-time-string "#+TITLE: Exercise %Y-%m-%d\n"))
+    (insert "#+AUTHOR: fauzy\n")
+    (insert (format-time-string "#+DATE: %Y-%m-%d\n"))
+    (insert "#+OPTIONS: toc:nil num:nil\n")
+    (insert "#+LATEX_HEADER: \\usepackage{amsmath, amssymb, amsthm}\n")
+    (insert "#+LATEX_HEADER: \\usepackage{mathtools}\n")
+    (insert "#+LATEX_HEADER: \\newtheorem{theorem}{Theorem}\n")
+    (insert "#+LATEX_HEADER: \\newtheorem{lemma}{Lemma}\n")
+    (insert "#+LATEX_HEADER: \\newtheorem{definition}{Definition}\n")
+    (insert "#+LATEX_HEADER: \\newtheorem{proposition}{Proposition}\n\n")
+    (insert "* 1.\n\n** Solution\n\\[\n\n\\]\n\n** Answer\n\n"))
+  (goto-char (point-max)))
+
+(global-set-key (kbd "C-c x") #'my/new-exercise)
+
 ;; Agenda scans these files for TODOs / scheduled / deadlines
-(setq org-agenda-files '("~/org/tasks.org"))
+(setq org-agenda-files '("~/org/tasks.org" "~/Notes/Exercise/"))
 (global-set-key (kbd "C-x a") #'org-agenda)
 
 ;; Packages
