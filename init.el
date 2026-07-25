@@ -120,7 +120,7 @@
   (insert "#+LATEX_HEADER: \\newtheorem{lemma}{Lemma}\n")
   (insert "#+LATEX_HEADER: \\newtheorem{definition}{Definition}\n")
   (insert "#+LATEX_HEADER: \\newtheorem{proposition}{Proposition}\n\n")
-  (insert "* 1.\n\n** Solution\n\\[\n\n\\]\n\n** Answer\n\n"))
+  (insert "* 1.\n\n** Solution\n\n** Answer\n\n"))
 
 (defun my/new-exercise (&optional topic)
   "Open today's exercise file, templating it if new.
@@ -257,6 +257,17 @@ With a prefix arg, prompt for TOPIC and open a separate file for it
   :bind (("C->" . mc/mark-next-like-this)
          ("C-<" . mc/mark-previous-like-this)
          ("C-c m" . mc/mark-all-like-this)))
+
+;; C-a toggles between the first non-blank char and the true start of line
+(defun super-line-toggle ()
+  "Move to indentation, or to line start if already there."
+  (interactive)
+  (let ((current-point (point)))
+    (back-to-indentation)
+    (when (= current-point (point))
+      (move-beginning-of-line 1))))
+
+(global-set-key (kbd "C-a") 'super-line-toggle)
 
 ;; Calc
 (use-package calc
