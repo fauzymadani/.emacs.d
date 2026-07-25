@@ -108,25 +108,37 @@
 (defvar my/exercise-dir "~/Notes/Exercise/"
   "Where math exercise files live.")
 
-(defun my/new-exercise ()
-  "Open today's exercise file in `my/exercise-dir', templating it if new."
-  (interactive)
+(defun my/exercise-template (title)
+  "Insert the math exercise header with TITLE."
+  (insert (format "#+TITLE: %s\n" title))
+  (insert "#+AUTHOR: fauzy\n")
+  (insert (format-time-string "#+DATE: %Y-%m-%d\n"))
+  (insert "#+OPTIONS: toc:nil num:nil\n")
+  (insert "#+LATEX_HEADER: \\usepackage{amsmath, amssymb, amsthm}\n")
+  (insert "#+LATEX_HEADER: \\usepackage{mathtools}\n")
+  (insert "#+LATEX_HEADER: \\newtheorem{theorem}{Theorem}\n")
+  (insert "#+LATEX_HEADER: \\newtheorem{lemma}{Lemma}\n")
+  (insert "#+LATEX_HEADER: \\newtheorem{definition}{Definition}\n")
+  (insert "#+LATEX_HEADER: \\newtheorem{proposition}{Proposition}\n\n")
+  (insert "* 1.\n\n** Solution\n\\[\n\n\\]\n\n** Answer\n\n"))
+
+(defun my/new-exercise (&optional topic)
+  "Open today's exercise file, templating it if new.
+With a prefix arg, prompt for TOPIC and open a separate file for it
+(exercise-<date>-<topic>.org) so two topics on one day don't collide."
+  (interactive (list (when current-prefix-arg (read-string "Topic: "))))
   (make-directory my/exercise-dir t)
-  (find-file (expand-file-name (format-time-string "exercise-%Y-%m-%d.org")
-                               my/exercise-dir))
-  (when (zerop (buffer-size))
-    (insert (format-time-string "#+TITLE: Exercise %Y-%m-%d\n"))
-    (insert "#+AUTHOR: fauzy\n")
-    (insert (format-time-string "#+DATE: %Y-%m-%d\n"))
-    (insert "#+OPTIONS: toc:nil num:nil\n")
-    (insert "#+LATEX_HEADER: \\usepackage{amsmath, amssymb, amsthm}\n")
-    (insert "#+LATEX_HEADER: \\usepackage{mathtools}\n")
-    (insert "#+LATEX_HEADER: \\newtheorem{theorem}{Theorem}\n")
-    (insert "#+LATEX_HEADER: \\newtheorem{lemma}{Lemma}\n")
-    (insert "#+LATEX_HEADER: \\newtheorem{definition}{Definition}\n")
-    (insert "#+LATEX_HEADER: \\newtheorem{proposition}{Proposition}\n\n")
-    (insert "* 1.\n\n** Solution\n\\[\n\n\\]\n\n** Answer\n\n"))
-  (goto-char (point-max)))
+  (let* ((date (format-time-string "%Y-%m-%d"))
+         (slug (and topic (not (string-empty-p topic))
+                    (replace-regexp-in-string "[^a-z0-9]+" "-" (downcase topic))))
+         (name (if slug (format "exercise-%s-%s.org" date slug)
+                 (format "exercise-%s.org" date)))
+         (title (if slug (format "Exercise %s — %s" date topic)
+                  (format "Exercise %s" date))))
+    (find-file (expand-file-name name my/exercise-dir))
+    (when (zerop (buffer-size))
+      (my/exercise-template title))
+    (goto-char (point-max))))
 
 (global-set-key (kbd "C-c x") #'my/new-exercise)
 
@@ -230,6 +242,21 @@
 
 (use-package yasnippet
   :config (yas-global-mode 1))
+
+;; C-, duplicates the line (or region); M-p / M-n move it up / down
+(global-set-key (kbd "C-,") #'duplicate-dwim)
+;; org binds C-, itself, so override it there too
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-,") #'duplicate-dwim))
+(use-package move-text
+  :bind (("M-p" . move-text-up)
+         ("M-n" . move-text-down)))
+
+;; Multiple cursors: C-> / C-< add a cursor at next/prev match, C-c m marks all
+(use-package multiple-cursors
+  :bind (("C->" . mc/mark-next-like-this)
+         ("C-<" . mc/mark-previous-like-this)
+         ("C-c m" . mc/mark-all-like-this)))
 
 ;; Calc
 (use-package calc
