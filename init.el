@@ -354,7 +354,6 @@ With a prefix arg, prompt for TOPIC and open a separate file for it
 ;; add (java-mode . eglot-ensure) here + install jdtls when Java starts
 
 ;; Editing quality of life
-(global-set-key (kbd "C-,") #'duplicate-dwim)   ; duplicate line, or region if selected
 (setq confirm-kill-emacs 'y-or-n-p)             ; ask before quitting
 
 ;; Window / dired navigation
