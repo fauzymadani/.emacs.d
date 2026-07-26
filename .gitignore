@@ -14,3 +14,4 @@ transient/
 *.fls
 *.fdb_latexmk
 bookmarks
+eshell/
