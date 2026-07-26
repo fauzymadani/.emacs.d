@@ -6,8 +6,24 @@
 
 ;; Font
 (set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 115 :weight 'medium)
-(set-face-attribute 'variable-pitch nil :family "Charis" :height 125)
+(set-face-attribute 'variable-pitch nil :family "STIX Two Text" :height 125)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
+
+;; C-c f: switch the org/prose (variable-pitch) font on the fly
+(defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125))
+  "Prose font candidates with their comfortable heights.")
+(defun my/set-note-font (font)
+  "Set the variable-pitch (org prose) FONT, prompting from `my/note-fonts'.
+Refreshes open mixed-pitch buffers so the change shows without a restart."
+  (interactive (list (completing-read "Note font: " (mapcar #'car my/note-fonts) nil t)))
+  (set-face-attribute 'variable-pitch nil :family font
+                      :height (or (cdr (assoc font my/note-fonts)) 125))
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (bound-and-true-p mixed-pitch-mode)
+        (mixed-pitch-mode -1)
+        (mixed-pitch-mode 1)))))
+(global-set-key (kbd "C-c f") #'my/set-note-font)
 
 ;; UI cleanup
 (menu-bar-mode -1)
