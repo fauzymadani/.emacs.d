@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 
-;; Caps Lock → Ctrl (only while Emacs is open)
+;; Caps Lock → Ctrl, only while Emacs is open
 (shell-command "setxkbmap -option ctrl:nocaps")
 (add-hook 'kill-emacs-hook (lambda () (shell-command "setxkbmap -option")))
 
@@ -9,12 +9,9 @@
 (set-face-attribute 'variable-pitch nil :family "STIX Two Text" :height 125)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
-;; C-c f: switch the org/prose (variable-pitch) font on the fly
-(defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125))
-  "Prose font candidates with their comfortable heights.")
+(defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)))
 (defun my/set-note-font (font)
-  "Set the variable-pitch (org prose) FONT, prompting from `my/note-fonts'.
-Refreshes open mixed-pitch buffers so the change shows without a restart."
+  "Set the org prose (variable-pitch) FONT and refresh open mixed-pitch buffers."
   (interactive (list (completing-read "Note font: " (mapcar #'car my/note-fonts) nil t)))
   (set-face-attribute 'variable-pitch nil :family font
                       :height (or (cdr (assoc font my/note-fonts)) 125))
@@ -31,8 +28,7 @@ Refreshes open mixed-pitch buffers so the change shows without a restart."
 (scroll-bar-mode -1)
 (fringe-mode 0)
 
-;; Package management
-;; Must be before package-initialize so org fork shadows built-in org
+;; Packages: load-path first so the org fork shadows built-in org
 (add-to-list 'load-path "~/.emacs.d/elpa/org-mode/lisp/")
 (require 'package)
 (setq package-archives
@@ -114,18 +110,16 @@ Refreshes open mixed-pitch buffers so the change shows without a restart."
   (add-hook 'org-mode-hook #'visual-line-mode)
   (add-hook 'org-mode-hook (lambda () (display-line-numbers-mode -1))))
 
-;; Quick capture: C-c c drops a TODO into tasks.org from anywhere
+;; Quick capture
 (setq org-capture-templates
       '(("t" "Task" entry (file "~/org/tasks.org")
          "* TODO %?\n  SCHEDULED: %t\n")))
 (global-set-key (kbd "C-c c") #'org-capture)
 
-;; C-c x opens today's math exercise file, templated on first creation
-(defvar my/exercise-dir "~/Notes/Exercise/"
-  "Where math exercise files live.")
+;; Math exercise files
+(defvar my/exercise-dir "~/Notes/Exercise/")
 
 (defun my/exercise-template (title)
-  "Insert the math exercise header with TITLE."
   (insert (format "#+TITLE: %s\n" title))
   (insert "#+AUTHOR: fauzy\n")
   (insert (format-time-string "#+DATE: %Y-%m-%d\n"))
@@ -139,9 +133,8 @@ Refreshes open mixed-pitch buffers so the change shows without a restart."
   (insert "* 1.\n\n** Solution\n\n** Answer\n\n"))
 
 (defun my/new-exercise (&optional topic)
-  "Open today's exercise file, templating it if new.
-With a prefix arg, prompt for TOPIC and open a separate file for it
-(exercise-<date>-<topic>.org) so two topics on one day don't collide."
+  "Open today's exercise file. With a prefix arg, prompt for TOPIC and use a
+separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (interactive (list (when current-prefix-arg (read-string "Topic: "))))
   (make-directory my/exercise-dir t)
   (let* ((date (format-time-string "%Y-%m-%d"))
@@ -158,7 +151,6 @@ With a prefix arg, prompt for TOPIC and open a separate file for it
 
 (global-set-key (kbd "C-c x") #'my/new-exercise)
 
-;; Agenda scans these files for TODOs / scheduled / deadlines
 (setq org-agenda-files '("~/org/tasks.org" "~/Notes/Exercise/"))
 (global-set-key (kbd "C-x a") #'org-agenda)
 
@@ -227,13 +219,6 @@ With a prefix arg, prompt for TOPIC and open a separate file for it
 (use-package which-key
   :config (which-key-mode))
 
-(use-package modusregel
-  :vc (:url "https://codeberg.org/jjba23/modusregel" :branch "trunk")
-  :config
-  (setq-default mode-line-format modusregel-format)
-  (add-hook 'after-change-major-mode-hook
-            (lambda () (setq mode-line-format modusregel-format))))
-
 (use-package vertico
   :config (vertico-mode))
 
@@ -259,22 +244,19 @@ With a prefix arg, prompt for TOPIC and open a separate file for it
 (use-package yasnippet
   :config (yas-global-mode 1))
 
-;; C-, duplicates the line (or region); M-p / M-n move it up / down
+;; Editing: duplicate line, move line, multiple cursors, smart C-a
 (global-set-key (kbd "C-,") #'duplicate-dwim)
-;; org binds C-, itself, so override it there too
-(with-eval-after-load 'org
+(with-eval-after-load 'org           ; org binds C-, itself, so override it there too
   (define-key org-mode-map (kbd "C-,") #'duplicate-dwim))
 (use-package move-text
   :bind (("M-p" . move-text-up)
          ("M-n" . move-text-down)))
 
-;; Multiple cursors: C-> / C-< add a cursor at next/prev match, C-c m marks all
 (use-package multiple-cursors
   :bind (("C->" . mc/mark-next-like-this)
          ("C-<" . mc/mark-previous-like-this)
          ("C-c m" . mc/mark-all-like-this)))
 
-;; C-a toggles between the first non-blank char and the true start of line
 (defun super-line-toggle ()
   "Move to indentation, or to line start if already there."
   (interactive)
@@ -296,72 +278,119 @@ With a prefix arg, prompt for TOPIC and open a separate file for it
   :after calc
   :config
   (keymap-set calc-mode-map "C-o" #'casual-calc-tmenu)
-  ;; calc-alg-map only exists once calc-ext is loaded
-  (with-eval-after-load 'calc-ext
+  (with-eval-after-load 'calc-ext   ; calc-alg-map only exists once calc-ext is loaded
     (keymap-set calc-alg-map "C-o" #'casual-calc-tmenu)))
 
-;; Theme
-(use-package modus-themes
-  :config
-  (setq modus-operandi-palette-overrides
-        '((bg-mode-line-active "#002147")
-          (fg-mode-line-active "#e8e2d9")
-          (bg-mode-line-inactive "#d6cfc4")
-          (border-mode-line-active unspecified)
-          (border-mode-line-inactive unspecified)))
-  (setq modus-vivendi-palette-overrides
-        '((bg-main "#111111")
-          (bg-dim "#1a1a1a")
-          (bg-mode-line-active "#1a2a3a")
-          (fg-mode-line-active "#e8e2d9")
-          (bg-mode-line-inactive "#1f1f1f")
-          (border-mode-line-active unspecified)
-          (border-mode-line-inactive unspecified)))
-  (load-theme 'modus-vivendi t)
+;; Theme: dark = Gruber Darker, light = whiteboard (built-in)
+(use-package gruber-darker-theme :ensure t :defer t)
 
-  (defun my/toggle-theme ()
-    (interactive)
-    (if (eq (car custom-enabled-themes) 'modus-vivendi)
-        (load-theme 'modus-operandi t)
-      (load-theme 'modus-vivendi t)))
-  (global-set-key (kbd "C-c t") #'my/toggle-theme)
-  (set-face-attribute 'mode-line nil :height 0.8)
-  (set-face-attribute 'mode-line-inactive nil :height 0.8)
-)
+(defvar my/dark-theme 'gruber-darker)
+(defvar my/light-theme 'whiteboard)
 
-;; C / compile
-(global-set-key (kbd "<f5>") #'recompile)   ; rerun last compile, no prompt
-(global-set-key (kbd "C-<f5>") #'compile)   ; edit the command first
+(defun my/load-theme (theme)
+  (mapc #'disable-theme custom-enabled-themes)
+  (load-theme theme t))
+
+(defun my/toggle-theme ()
+  (interactive)
+  (my/load-theme (if (memq my/dark-theme custom-enabled-themes)
+                     my/light-theme my/dark-theme)))
+(global-set-key (kbd "C-c t") #'my/toggle-theme)
+
+(my/load-theme my/dark-theme)
+
+;; Light theme: vanilla grey mode line. Dark theme: cool background + reset
+;; mode-line-active (Gruber doesn't theme it) so no grey lingers from light.
+(defvar my/dark-bg "#0d1014")
+
+(defun my/theme-tweaks (&rest _)
+  (if (memq my/light-theme custom-enabled-themes)
+      (progn
+        (dolist (f '(mode-line mode-line-active))
+          (set-face-attribute f nil
+                              :background "grey75" :foreground "black"
+                              :box '(:line-width -1 :style released-button)
+                              :overline nil :underline nil :inherit nil :height 1.0))
+        (set-face-attribute 'mode-line-inactive nil
+                            :background "grey90" :foreground "grey20" :weight 'light
+                            :box '(:line-width -1 :color "grey75")
+                            :overline nil :underline nil :inherit nil :height 1.0))
+    (set-face-attribute 'default nil :background my/dark-bg)
+    (set-face-attribute 'mode-line-active nil
+                        :background 'unspecified :foreground 'unspecified :box 'unspecified
+                        :overline 'unspecified :underline 'unspecified :weight 'unspecified
+                        :height 'unspecified :inherit 'mode-line)))
+(add-hook 'enable-theme-functions #'my/theme-tweaks)
+(my/theme-tweaks)                     ; startup theme loaded before this hook existed
+
+;; Compile
+(global-set-key (kbd "<f5>") #'recompile)
+(global-set-key (kbd "C-<f5>") #'compile)
 (setq compilation-scroll-output 'first-error)
-(add-hook 'compilation-filter-hook #'ansi-color-compilation-filter) ; colored gcc/make output
-;; compile output always in a window at the bottom, ~30% tall
+(add-hook 'compilation-filter-hook #'ansi-color-compilation-filter)
 (add-to-list 'display-buffer-alist
              '("\\*compilation\\*"
                (display-buffer-reuse-window display-buffer-at-bottom)
                (window-height . 0.3)))
 
-;; In-buffer completion popup (like VSCode's IntelliSense)
+;; Completion popup
 (use-package corfu
   :init (global-corfu-mode)
   :config (setq corfu-auto t
                 corfu-auto-delay 0.2
                 corfu-auto-prefix 2))
 
-;; LSP: real C intelligence via clangd (completion, errors, jump-to-def, docs)
+;; LSP
 (use-package eglot
   :ensure nil
   :hook (c-mode . eglot-ensure))
-;; add (java-mode . eglot-ensure) here + install jdtls when Java starts
+
+;; Extra color in C buffers only; buffer-local so other modes stay minimal
+(defun my/c-extra-colors ()
+  (dolist (pair '((font-lock-type-face          . "#2ac3de")
+                  (font-lock-function-name-face . "#7aa2f7")
+                  (font-lock-preprocessor-face  . "#9ece6a")
+                  (font-lock-constant-face      . "#bb9af7")
+                  (font-lock-variable-name-face . "#c0caf5")
+                  (font-lock-number-face        . "#89ddff")
+                  (font-lock-comment-face       . "#565f89")))
+    (when (facep (car pair))
+      (face-remap-add-relative (car pair) `(:foreground ,(cdr pair))))))
+(add-hook 'c-mode-hook    #'my/c-extra-colors)
+(add-hook 'c-ts-mode-hook #'my/c-extra-colors)
+
+;; Go: built-in go-ts-mode + gopls via eglot
+(add-to-list 'exec-path (expand-file-name "~/go/bin"))   ; so eglot finds gopls
+(setq treesit-language-source-alist
+      '((go   "https://github.com/tree-sitter/tree-sitter-go")
+        (gomod "https://github.com/camdencheek/tree-sitter-go-mod")))
+(add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
+(add-to-list 'auto-mode-alist '("/go\\.mod\\'" . go-mod-ts-mode))
+
+(defun my/go-format-on-save ()
+  (when (eglot-managed-p)
+    (ignore-errors (eglot-code-actions nil nil "source.organizeImports" t))
+    (eglot-format-buffer)))
+
+(add-hook 'go-ts-mode-hook #'eglot-ensure)
+(add-hook 'go-ts-mode-hook
+          (lambda () (add-hook 'before-save-hook #'my/go-format-on-save nil t)))
+
+;; A little color for Go, still minimal
+(defun my/go-extra-colors ()
+  (dolist (pair '((font-lock-type-face          . "#2ac3de")
+                  (font-lock-function-name-face . "#7aa2f7")
+                  (font-lock-number-face        . "#89ddff")))
+    (when (facep (car pair))
+      (face-remap-add-relative (car pair) `(:foreground ,(cdr pair))))))
+(add-hook 'go-ts-mode-hook #'my/go-extra-colors)
 
 ;; Editing quality of life
-(setq confirm-kill-emacs 'y-or-n-p)             ; ask before quitting
+(setq confirm-kill-emacs 'y-or-n-p)
+(windmove-default-keybindings)
+(setq dired-dwim-target t)            ; copy/move defaults to the other dired pane
+(setq dired-listing-switches "-alh")
 
-;; Window / dired navigation
-(windmove-default-keybindings)         ; Shift+arrow to move between windows
-(setq dired-dwim-target t)             ; copy/move defaults to the other dired pane
-(setq dired-listing-switches "-alh")   ; human-readable file sizes in dired
-
-;; Basic quality of life
 (setq make-backup-files nil)
 (setq auto-save-default nil)
 (global-display-line-numbers-mode t)
