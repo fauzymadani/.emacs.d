@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/79fcb056-3b84-4de0-b281-b8b73a2ab7db
 - **Consult + Embark + Marginalia**: enhanced navigation and search
 - **YASnippet**: math snippets (`frac`, `int`, `sum`, `lim`, `mat`, `begin`)
 - **Dated exercise files**: `C-c x` opens a templated math exercise, `C-u C-c x` per topic
-- **Themes**: Gruber Darker (dark) and whiteboard (light), toggle with `C-c t`
+- **Themes**: Gruber Darker (dark) and leuven (light), toggle with `C-c t`
 - **Editing extras**: duplicate line, move line, multiple cursors, smart line start
 - **Languages**: C (clangd) and Go (gopls), completion via corfu + eglot
 

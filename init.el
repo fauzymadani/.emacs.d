@@ -6,14 +6,15 @@
 
 ;; Font
 (set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 115 :weight 'medium)
-(set-face-attribute 'variable-pitch nil :family "STIX Two Text" :height 125)
+;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
+(set-face-attribute 'variable-pitch nil :family "STIX Two Text" :height 125 :weight 'regular)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 (defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)))
 (defun my/set-note-font (font)
   "Set the org prose (variable-pitch) FONT and refresh open mixed-pitch buffers."
   (interactive (list (completing-read "Note font: " (mapcar #'car my/note-fonts) nil t)))
-  (set-face-attribute 'variable-pitch nil :family font
+  (set-face-attribute 'variable-pitch nil :family font :weight 'regular
                       :height (or (cdr (assoc font my/note-fonts)) 125))
   (dolist (buf (buffer-list))
     (with-current-buffer buf
@@ -113,7 +114,9 @@
 ;; Quick capture
 (setq org-capture-templates
       '(("t" "Task" entry (file "~/org/tasks.org")
-         "* TODO %?\n  SCHEDULED: %t\n")))
+         "* TODO %?\n  SCHEDULED: %t\n")
+        ("w" "Work note" entry (file+olp+datetree "~/org/work.org")
+         "* %?\n%U\n")))
 (global-set-key (kbd "C-c c") #'org-capture)
 
 ;; Math exercise files
@@ -155,7 +158,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (global-set-key (kbd "C-x a") #'org-agenda)
 
 ;; Packages
-(use-package auctex)
+(use-package auctex :defer t)
 
 (use-package cdlatex
   :hook (org-mode . org-cdlatex-mode)
@@ -211,9 +214,23 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 (use-package dashboard
   :config
-  (setq dashboard-startup-banner 'official
+  (defun my/dashboard-cheatsheet (&rest _)
+    (dashboard-insert-heading "Cheatsheet:")
+    (insert "\n")
+    (dolist (l '("C-c x    exercise file (C-u: per topic)"
+                 "C-c c    capture (t task / w work note)"
+                 "C-x a a  agenda"
+                 "C-c n    journal entry"
+                 "C-c T    start timer (tmr)"
+                 "C-c L    focus / present (S-up/down = slides)"
+                 "C-c t    toggle theme    C-c f  prose font"
+                 "C-x u    visual undo (vundo)"))
+      (insert l "\n")))
+  (add-to-list 'dashboard-item-generators '(cheatsheet . my/dashboard-cheatsheet))
+  (setq dashboard-startup-banner (expand-file-name "gnu.png" user-emacs-directory)
+        dashboard-image-banner-max-height 300
         dashboard-center-content t
-        dashboard-items '((recents . 5)))
+        dashboard-items '((recents . 5) (cheatsheet . 1)))
   (dashboard-setup-startup-hook))
 
 (use-package which-key
@@ -270,6 +287,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 ;; Calc
 (use-package calc
   :ensure nil
+  :defer t
   :config
   ;; left-to-right like a normal calculator: 12000/60000*100 = 20, not 2e-3
   (setq calc-multiplication-has-precedence nil))
@@ -281,11 +299,60 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (with-eval-after-load 'calc-ext   ; calc-alg-map only exists once calc-ext is loaded
     (keymap-set calc-alg-map "C-o" #'casual-calc-tmenu)))
 
-;; Theme: dark = Gruber Darker, light = whiteboard (built-in)
+;; Ledger: plain-text accounting. Loads only on ledger files, startup untouched.
+(use-package ledger-mode
+  :mode "\\.ledger\\'"
+  :config
+  (setq ledger-clear-whole-transactions t)
+  (setq ledger-reports
+        '(("budget"  "%(binary) -f %(ledger-file) --budget balance Expenses")
+          ("bal"     "%(binary) -f %(ledger-file) balance")
+          ("reg"     "%(binary) -f %(ledger-file) register")
+          ("monthly" "%(binary) -f %(ledger-file) balance Expenses --monthly")
+          ("account" "%(binary) -f %(ledger-file) register %(account)"))))
+
+;; UI niceties: pulse current line on jumps, visual undo tree.
+(use-package pulsar
+  :config (pulsar-global-mode 1))
+
+(use-package vundo
+  :bind ("C-x u" . vundo)
+  :config (setq vundo-roll-back-on-quit nil))
+
+;; tmr: timers for study/pomodoro. Loads on first use.
+(use-package tmr
+  :bind ("C-c T" . tmr))
+
+;; logos: distraction-free reading; org headings become slides. Loads on key.
+(use-package logos
+  :bind (("C-c L" . logos-focus-mode)
+         ([remap narrow-to-region] . logos-narrow-dwim)
+         ([remap forward-page]     . logos-forward-page-dwim)
+         ([remap backward-page]    . logos-backward-page-dwim))
+  :config
+  (setq logos-outlines-are-pages t
+        logos-hide-mode-line t
+        logos-hide-fringe t
+        logos-scroll-lock t
+        logos-variable-pitch t
+        logos-olivetti t)
+  ;; Shift+down/up = next/prev slide, snapping full-screen. First press narrows
+  ;; the current heading (slide 1); after that each press flips to the next.
+  (defun my/slide-next ()
+    (interactive)
+    (if (buffer-narrowed-p) (logos-forward-page-dwim) (logos-narrow-dwim)))
+  (defun my/slide-prev ()
+    (interactive)
+    (when (buffer-narrowed-p) (logos-backward-page-dwim)))
+  (define-key logos-focus-mode-map (kbd "<S-down>") #'my/slide-next)
+  (define-key logos-focus-mode-map (kbd "<S-up>")   #'my/slide-prev)
+  (add-hook 'logos-page-motion-hook #'logos--reveal-entry))
+
+;; Theme: dark = Gruber Darker, light = leuven (built-in)
 (use-package gruber-darker-theme :ensure t :defer t)
 
 (defvar my/dark-theme 'gruber-darker)
-(defvar my/light-theme 'whiteboard)
+(defvar my/light-theme 'modus-operandi-tritanopia)
 
 (defun my/load-theme (theme)
   (mapc #'disable-theme custom-enabled-themes)
