@@ -16,3 +16,8 @@ transient/
 bookmarks
 eshell/
 tree-sitter/
+
+# session state (machine-local, not config)
+history
+places
+fontaine-latest-state.eld
