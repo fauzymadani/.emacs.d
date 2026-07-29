@@ -26,6 +26,13 @@
 (scroll-bar-mode -1)
 (fringe-mode 0)
 
+;; Mode-line extras: column number + file size
+(column-number-mode 1)
+(size-indication-mode 1)
+
+;; No line wrapping anywhere; long lines truncate and scroll sideways.
+(setq-default truncate-lines t)
+
 ;; Packages: load-path first so the org fork shadows built-in org
 (add-to-list 'load-path "~/.emacs.d/elpa/org-mode/lisp/")
 (require 'package)
@@ -105,7 +112,6 @@
         org-hide-leading-stars t
         org-ellipsis " ▾"
         org-startup-folded 'nofold)
-  (add-hook 'org-mode-hook #'visual-line-mode)
   (add-hook 'org-mode-hook (lambda () (display-line-numbers-mode -1))))
 
 ;; Quick capture
@@ -219,7 +225,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
                  "C-x a a  agenda"
                  "C-c n    journal entry"
                  "C-c T    start timer (tmr)"
-                 "C-c L    focus / present (S-up/down = slides)"
+                 "C-c L    distraction-free reading (logos)"
+                 "C-c P    present slides (S-up/down = flip)"
                  "C-c t    toggle theme    C-c f  prose font"
                  "C-x u    visual undo (vundo)"))
       (insert l "\n")))
@@ -364,13 +371,41 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (define-key logos-focus-mode-map (kbd "<S-up>")   #'my/slide-prev)
   (add-hook 'logos-page-motion-hook #'logos--reveal-entry))
 
-;; Theme: dark = ef-winter, light = modus-operandi-tritanopia
-(defvar my/dark-theme 'ef-winter)
-(defvar my/light-theme 'modus-operandi-tritanopia)
-; (defvar my/light-theme 'ef-trio-light)
+;; org-tree-slide: real slideshow (karthink-style). One heading = one slide,
+;; instant snap, big centered text. C-c P starts, S-down/S-up flip slides.
+(use-package org-tree-slide
+  :after org
+  :bind (("C-c P" . org-tree-slide-mode)
+         :map org-tree-slide-mode-map
+         ("<S-down>" . org-tree-slide-move-next-tree)
+         ("<S-up>"   . org-tree-slide-move-previous-tree))
+  :config
+  (setq org-tree-slide-slide-in-effect nil       ; no animation, instant snap
+        org-tree-slide-skip-outline-level 8)
+  (add-hook 'org-tree-slide-play-hook (lambda () (text-scale-increase 4)))
+  (add-hook 'org-tree-slide-stop-hook (lambda () (text-scale-set 0))))
 
+;; Any load-theme disables the current theme first, so themes never stack
+;; (raw M-x load-theme otherwise layers the new one over the old = mixed look).
+(advice-add 'load-theme :before
+            (lambda (&rest _) (mapc #'disable-theme custom-enabled-themes)))
+
+;; Theme: dark = modus-vivendi, light = modus-operandi-tritanopia.
+;; Softer black main background (modus default is pure #000000, too sharp).
+(defvar my/dark-theme 'modus-vivendi)
+(defvar my/light-theme 'modus-operandi-tritanopia)
+(setq modus-vivendi-palette-overrides '((bg-main "#121212")))
+
+;; Each theme styles its own mode-line. We clear the mode-line faces before
+;; every load so no stale override survives a toggle (the old leak bug).
 (defun my/load-theme (theme)
   (mapc #'disable-theme custom-enabled-themes)
+  (dolist (f '(mode-line mode-line-active mode-line-inactive))
+    (set-face-attribute f nil
+                        :background 'unspecified :foreground 'unspecified
+                        :box 'unspecified :overline 'unspecified
+                        :underline 'unspecified :inherit 'unspecified
+                        :weight 'unspecified :height 'unspecified))
   (load-theme theme t))
 
 (defun my/toggle-theme ()
@@ -380,22 +415,6 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (global-set-key (kbd "C-c t") #'my/toggle-theme)
 
 (my/load-theme my/dark-theme)
-
-;; Light theme keeps the vanilla grey mode line. ef-winter themes its own, so
-;; the dark case does nothing and lets the theme own every face.
-(defun my/theme-tweaks (&rest _)
-  (when (memq my/light-theme custom-enabled-themes)
-    (dolist (f '(mode-line mode-line-active))
-      (set-face-attribute f nil
-                          :background "grey75" :foreground "black"
-                          :box '(:line-width -1 :style released-button)
-                          :overline nil :underline nil :inherit nil :height 1.0))
-    (set-face-attribute 'mode-line-inactive nil
-                        :background "grey90" :foreground "grey20" :weight 'light
-                        :box '(:line-width -1 :color "grey75")
-                        :overline nil :underline nil :inherit nil :height 1.0)))
-(add-hook 'enable-theme-functions #'my/theme-tweaks)
-(my/theme-tweaks)                     ; startup theme loaded before this hook existed
 
 ;; Compile
 (global-set-key (kbd "<f5>") #'recompile)
@@ -419,7 +438,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :ensure nil
   :hook (c-mode . eglot-ensure))
 
-;; Extra color in C buffers only; buffer-local so other modes stay minimal
+;; Extra color in C buffers only; 
 (defun my/c-extra-colors ()
   (dolist (pair '((font-lock-type-face          . "#2ac3de")
                   (font-lock-function-name-face . "#7aa2f7")
@@ -450,7 +469,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (add-hook 'go-ts-mode-hook
           (lambda () (add-hook 'before-save-hook #'my/go-format-on-save nil t)))
 
-;; A little color for Go, still minimal
+;; a little more color
 (defun my/go-extra-colors ()
   (dolist (pair '((font-lock-type-face          . "#2ac3de")
                   (font-lock-function-name-face . "#7aa2f7")

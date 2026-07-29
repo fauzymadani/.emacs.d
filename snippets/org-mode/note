@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: note header
+# key: note
+# --
+#+title: ${1:`(file-name-base (or buffer-file-name "note"))`}
+#+date: `(format-time-string "%Y-%m-%d")`
+#+filetags: :${2:notes}:
+
+$0
