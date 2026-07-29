@@ -33,6 +33,11 @@
 ;; No line wrapping anywhere; long lines truncate and scroll sideways.
 (setq-default truncate-lines t)
 
+;; Perf: default GC (800KB) and process-read buffer (4KB) are tiny. Bigger =
+;; fewer GC pauses while editing and snappier eglot/gopls (it streams a lot).
+(setq gc-cons-threshold (* 100 1024 1024)
+      read-process-output-max (* 1024 1024))
+
 ;; Packages: load-path first so the org fork shadows built-in org
 (add-to-list 'load-path "~/.emacs.d/elpa/org-mode/lisp/")
 (require 'package)
@@ -255,7 +260,14 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package consult
   :bind (("C-x b" . consult-buffer)
          ("C-s"   . consult-line)
-         ("M-g g" . consult-goto-line)))
+         ("M-g g" . consult-goto-line)
+         ("M-g i" . consult-imenu)
+         ("M-s r" . consult-ripgrep)))   ; project-wide text search (needs rg)
+
+;; wgrep: make a grep/embark-export buffer editable, save edits back to files.
+;; Flow: M-s r -> C-. (embark) export -> C-c C-p edit -> C-c C-c save all.
+(use-package wgrep
+  :config (setq wgrep-auto-save-buffer t))
 
 (use-package embark
   :bind (("C-." . embark-act)
@@ -281,6 +293,11 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :bind (("C->" . mc/mark-next-like-this)
          ("C-<" . mc/mark-previous-like-this)
          ("C-c m" . mc/mark-all-like-this)))
+
+;; avy: jump anywhere on screen. M-j, type a couple chars, pick the match.
+(use-package avy
+  :bind (("M-j"   . avy-goto-char-timer)
+         ("M-g w" . avy-goto-word-1)))
 
 (defun super-line-toggle ()
   "Move to indentation, or to line start if already there."
@@ -393,7 +410,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 ;; Theme: dark = modus-vivendi, light = modus-operandi-tritanopia.
 ;; Softer black main background (modus default is pure #000000, too sharp).
 (defvar my/dark-theme 'modus-vivendi)
-(defvar my/light-theme 'modus-operandi-tritanopia)
+; (defvar my/light-theme 'modus-operandi-tritanopia)
+(defvar my/light-theme 'ef-trio-light)
 (setq modus-vivendi-palette-overrides '((bg-main "#121212")))
 
 ;; Each theme styles its own mode-line. We clear the mode-line faces before
@@ -432,6 +450,10 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :config (setq corfu-auto t
                 corfu-auto-delay 0.2
                 corfu-auto-prefix 2))
+
+;; Emacs 30 adds ispell word-completion in text/org buffers; it errors when no
+;; system word-list is installed. Off (we don't want dictionary-guess in corfu).
+(setq text-mode-ispell-word-completion nil)
 
 ;; LSP
 (use-package eglot
@@ -484,6 +506,16 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (setq dired-dwim-target t)            ; copy/move defaults to the other dired pane
 (setq dired-listing-switches "-alh")
 
+;; dired-preview: preview the file under cursor in a side window while browsing.
+(use-package dired-preview
+  :hook (dired-mode . dired-preview-mode)
+  :config
+  (setq dired-preview-delay 0.7          ; wait until you pause before previewing
+        dired-preview-max-size (* 2 1024 1024)  ; skip files over 2MB
+        ;; don't try to preview heavy/binary types; they're what makes it lag
+        dired-preview-ignored-extensions-regexp
+        "\\.\\(gz\\|zst\\|zip\\|tar\\|xz\\|rar\\|7z\\|mp4\\|mkv\\|webm\\|mp3\\|iso\\|pdf\\|dvi\\|png\\|jpe?g\\|gif\\)\\'"))
+
 (setq make-backup-files nil)
 (setq auto-save-default nil)
 (global-display-line-numbers-mode t)
@@ -491,6 +523,14 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (electric-pair-mode t)
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
+
+;; Session state + editing niceties (all built-in)
+(save-place-mode 1)                   ; reopen files at last cursor position
+(savehist-mode 1)                     ; persist minibuffer history across restarts
+(recentf-mode 1)                      ; track recent files (dashboard uses this)
+(setq recentf-max-saved-items 50)
+(repeat-mode 1)                       ; after C-x o, press o o o; same for other repeats
+(delete-selection-mode 1)             ; typing replaces the active region
 
 ;; Keep Customize's auto-writes out of init.el
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
