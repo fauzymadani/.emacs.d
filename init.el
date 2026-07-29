@@ -1,16 +1,13 @@
 ;; -*- lexical-binding: t; -*-
 
-;; Caps Lock → Ctrl, only while Emacs is open
-(shell-command "setxkbmap -option ctrl:nocaps")
-(add-hook 'kill-emacs-hook (lambda () (shell-command "setxkbmap -option")))
-
 ;; Font
-(set-face-attribute 'default nil :family "Iosevka Nerd Font Mono" :height 115 :weight 'medium)
+(set-face-attribute 'default nil :family "IBM Plex Mono" :height 105 :weight 'medium)
 ;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
 (set-face-attribute 'variable-pitch nil :family "STIX Two Text" :height 125 :weight 'regular)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
-(defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)))
+(defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)
+                        ("Crimson Pro" . 130) ("ETBookOT" . 135) ("ETBembo" . 135)))
 (defun my/set-note-font (font)
   "Set the org prose (variable-pitch) FONT and refresh open mixed-pitch buffers."
   (interactive (list (completing-read "Note font: " (mapcar #'car my/note-fonts) nil t)))
@@ -215,7 +212,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package dashboard
   :config
   (defun my/dashboard-cheatsheet (&rest _)
-    (dashboard-insert-heading "Cheatsheet:")
+    (dashboard-insert-heading "Usefull Stuff:")
     (insert "\n")
     (dolist (l '("C-c x    exercise file (C-u: per topic)"
                  "C-c c    capture (t task / w work note)"
@@ -233,7 +230,9 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
         dashboard-items '((recents . 5) (cheatsheet . 1)))
   (dashboard-setup-startup-hook))
 
+;; which-key is built into Emacs 30, no package to install/load.
 (use-package which-key
+  :ensure nil
   :config (which-key-mode))
 
 (use-package vertico
@@ -258,7 +257,9 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package embark-consult
   :after (embark consult))
 
+;; yasnippet scans snippet dirs on load; defer 1s so it's off the startup path.
 (use-package yasnippet
+  :defer 1
   :config (yas-global-mode 1))
 
 ;; Editing: duplicate line, move line, multiple cursors, smart C-a
@@ -313,6 +314,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 ;; UI niceties: pulse current line on jumps, visual undo tree.
 (use-package pulsar
+  :defer 1
   :config (pulsar-global-mode 1))
 
 (use-package vundo
@@ -322,6 +324,20 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 ;; tmr: timers for study/pomodoro. Loads on first use.
 (use-package tmr
   :bind ("C-c T" . tmr))
+
+;; popper: tame popup buffers (help, compilation, shell) into a toggleable stack.
+(use-package popper
+  :bind (("C-`"   . popper-toggle)
+         ("C-M-`" . popper-cycle)
+         ("C-c `" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*" "\\*Warnings\\*" "Output\\*$"
+          "\\*Async Shell Command\\*" "\\*compilation\\*"
+          help-mode compilation-mode eshell-mode))
+  (setq popper-group-function #'popper-group-by-project)
+  (popper-mode 1)
+  (popper-echo-mode 1))
 
 ;; logos: distraction-free reading; org headings become slides. Loads on key.
 (use-package logos
@@ -348,11 +364,10 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (define-key logos-focus-mode-map (kbd "<S-up>")   #'my/slide-prev)
   (add-hook 'logos-page-motion-hook #'logos--reveal-entry))
 
-;; Theme: dark = Gruber Darker, light = leuven (built-in)
-(use-package gruber-darker-theme :ensure t :defer t)
-
-(defvar my/dark-theme 'gruber-darker)
+;; Theme: dark = ef-winter, light = modus-operandi-tritanopia
+(defvar my/dark-theme 'ef-winter)
 (defvar my/light-theme 'modus-operandi-tritanopia)
+; (defvar my/light-theme 'ef-trio-light)
 
 (defun my/load-theme (theme)
   (mapc #'disable-theme custom-enabled-themes)
@@ -366,27 +381,19 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 (my/load-theme my/dark-theme)
 
-;; Light theme: vanilla grey mode line. Dark theme: cool background + reset
-;; mode-line-active (Gruber doesn't theme it) so no grey lingers from light.
-(defvar my/dark-bg "#0d1014")
-
+;; Light theme keeps the vanilla grey mode line. ef-winter themes its own, so
+;; the dark case does nothing and lets the theme own every face.
 (defun my/theme-tweaks (&rest _)
-  (if (memq my/light-theme custom-enabled-themes)
-      (progn
-        (dolist (f '(mode-line mode-line-active))
-          (set-face-attribute f nil
-                              :background "grey75" :foreground "black"
-                              :box '(:line-width -1 :style released-button)
-                              :overline nil :underline nil :inherit nil :height 1.0))
-        (set-face-attribute 'mode-line-inactive nil
-                            :background "grey90" :foreground "grey20" :weight 'light
-                            :box '(:line-width -1 :color "grey75")
-                            :overline nil :underline nil :inherit nil :height 1.0))
-    (set-face-attribute 'default nil :background my/dark-bg)
-    (set-face-attribute 'mode-line-active nil
-                        :background 'unspecified :foreground 'unspecified :box 'unspecified
-                        :overline 'unspecified :underline 'unspecified :weight 'unspecified
-                        :height 'unspecified :inherit 'mode-line)))
+  (when (memq my/light-theme custom-enabled-themes)
+    (dolist (f '(mode-line mode-line-active))
+      (set-face-attribute f nil
+                          :background "grey75" :foreground "black"
+                          :box '(:line-width -1 :style released-button)
+                          :overline nil :underline nil :inherit nil :height 1.0))
+    (set-face-attribute 'mode-line-inactive nil
+                        :background "grey90" :foreground "grey20" :weight 'light
+                        :box '(:line-width -1 :color "grey75")
+                        :overline nil :underline nil :inherit nil :height 1.0)))
 (add-hook 'enable-theme-functions #'my/theme-tweaks)
 (my/theme-tweaks)                     ; startup theme loaded before this hook existed
 

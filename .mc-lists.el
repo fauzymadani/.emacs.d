@@ -3,6 +3,7 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        vundo
         ))
 
 (setq mc/cmds-to-run-once
