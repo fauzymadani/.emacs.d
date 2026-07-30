@@ -116,7 +116,8 @@
         org-hide-emphasis-markers t
         org-hide-leading-stars t
         org-ellipsis " ▾"
-        org-startup-folded 'nofold)
+        org-startup-folded 'nofold
+        org-startup-with-inline-images t)
   (add-hook 'org-mode-hook (lambda () (display-line-numbers-mode -1))))
 
 ;; Quick capture
