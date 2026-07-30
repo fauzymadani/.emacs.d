@@ -459,7 +459,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 ;; LSP
 (use-package eglot
   :ensure nil
-  :hook (c-mode . eglot-ensure))
+  :hook (c-mode . eglot-ensure)
+  :bind (:map eglot-mode-map ("C-c r" . eglot-rename)))
 
 ;; Extra color in C buffers only; 
 (defun my/c-extra-colors ()

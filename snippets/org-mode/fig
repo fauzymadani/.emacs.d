@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: image with width
+# key: fig
+# --
+#+ATTR_ORG: :width ${1:400}
+[[file:$2]]$0
