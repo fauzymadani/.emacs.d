@@ -306,6 +306,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("C-c f"        . "prose font")
      ("C-c t"        . "theme")
      ("C-c r"        . "rename")
+     ("C-c h"        . "this sheet")
      ("C-x g"        . "magit")
      ("<f5>"         . "recompile")
      ("C-<f5>"       . "compile"))))
@@ -344,6 +345,14 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (defun my/close-cheatsheet (&rest _)
   (when-let ((w (get-buffer-window "*Cheatsheet*")))
     (delete-window w)))
+
+;; Pop the cheatsheet open, or close it if already showing.
+(defun my/toggle-cheatsheet ()
+  (interactive)
+  (if (get-buffer-window "*Cheatsheet*")
+      (my/close-cheatsheet)
+    (my/show-cheatsheet)))
+(global-set-key (kbd "C-c h") #'my/toggle-cheatsheet)
 
 ;; Own the whole startup layout so no stray *scratch* window survives:
 ;; dashboard fills the frame, cheatsheet sits in the side window. Run on a
