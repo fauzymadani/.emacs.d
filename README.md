@@ -16,12 +16,17 @@ https://github.com/user-attachments/assets/79fcb056-3b84-4de0-b281-b8b73a2ab7db
 
 - **Org + LaTeX preview**: tecosaur's org fork with live SVG math rendering
 - **cdlatex**: fast math input with custom symbol bindings
-- **Mixed pitch**: STIX Two Text for prose (switch live with `C-c f`), Latin Modern Math for equations
+- **Mixed pitch**: Crimson Pro for prose (switch live with `C-c f`), Latin Modern Math for equations
 - **Olivetti**: focused writing column
 - **Consult + Embark + Marginalia**: enhanced navigation and search
 - **YASnippet**: math snippets (`frac`, `int`, `sum`, `lim`, `mat`, `begin`)
 - **Dated exercise files**: `C-c x` opens a templated math exercise, `C-u C-c x` per topic
-- **Themes**: Gruber Darker (dark) and leuven (light), toggle with `C-c t`
+- **Cheatsheet panel**: keybinding reference in a side window on startup
+- **RSS reader**: elfeed with categorized feeds (`C-c w`)
+- **Git**: magit (`C-x g`)
+- **Notes**: denote for linked plain-text notes (`C-c N`)
+- **keycast**: shows the last key and command in the mode line
+- **Themes**: modus-vivendi (dark) and modus-operandi / mindre (light), toggle with `C-c t`
 - **Editing extras**: duplicate line, move line, multiple cursors, smart line start
 - **Languages**: C (clangd) and Go (gopls), completion via corfu + eglot
 
@@ -31,9 +36,9 @@ Fonts (install to `~/.local/share/fonts`, then `fc-cache -f`):
 
 | Font | Role | Required? |
 |------|------|-----------|
-| Iosevka Nerd Font Mono | default + code | yes |
-| STIX Two Text | default prose (Org) | yes |
-| EB Garamond, Charis | prose alternatives (`C-c f`) | optional |
+| Martian Mono | default + code | yes |
+| Crimson Pro | default prose (Org) | yes |
+| EB Garamond, STIX Two Text, Charis | prose alternatives (`C-c f`) | optional |
 | Latin Modern Math | math previews and export | ships with TeX Live |
 
 Tools:
@@ -80,8 +85,15 @@ and organize imports on save.
 | `C-c x` | Open today's exercise file (`C-u` prefix: per topic) |
 | `C-x a` | Org agenda |
 | `C-c n` | New org-journal entry |
-| `C-c f` | Switch prose font (STIX / EB Garamond / Charis) |
+| `C-c N` | Denote notes (`n` new, `o` find, `l` link, `b` backlinks, `r` rename) |
+| `C-c w` | Open RSS reader (elfeed) |
+| `C-x g` | Git status (magit) |
+| `C-c f` | Switch prose font (Crimson Pro / EB Garamond / STIX / Charis) |
 | `C-c t` | Toggle dark/light theme |
+| `C-c P` | Present slides (org-tree-slide) |
+| `C-c L` | Distraction-free reading (logos) |
+| `C-c T` | Start a timer (tmr) |
+| `` C-` `` | Toggle popup buffers (popper) |
 | `C-,` | Duplicate line (or region) |
 | `M-p` / `M-n` | Move line/region up / down |
 | `C->` / `C-<` | Add cursor at next / previous match |

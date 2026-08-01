@@ -21,3 +21,8 @@ tree-sitter/
 history
 places
 fontaine-latest-state.eld
+elfeed/
+url/
+games/
+network-security.data
+package-quickstart.el

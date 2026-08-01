@@ -1,9 +1,9 @@
 ;; -*- lexical-binding: t; -*-
 
 ;; Font
-(set-face-attribute 'default nil :family "IBM Plex Mono" :height 105 :weight 'medium)
+(set-face-attribute 'default nil :family "Martian Mono" :height 100 :weight 'regular)
 ;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
-(set-face-attribute 'variable-pitch nil :family "STIX Two Text" :height 125 :weight 'regular)
+(set-face-attribute 'variable-pitch nil :family "Crimson Pro" :height 130 :weight 'regular)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 (defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)
@@ -21,6 +21,7 @@
 (global-set-key (kbd "C-c f") #'my/set-note-font)
 
 ;; UI cleanup
+(setq inhibit-startup-screen t)
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -52,9 +53,11 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-;; Org + LaTeX preview
+;; Org + LaTeX preview. Deferred: org (the fork) is large; nothing at startup
+;; needs it. It loads on the first .org file (org-mode autoload) or C-c c/C-x a.
 (use-package org
-  :load-path "~/.emacs.d/elpa/org-mode/lisp/")
+  :load-path "~/.emacs.d/elpa/org-mode/lisp/"
+  :defer t)
 
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "C-c i") #'my/org-insert-inline-math)
@@ -79,12 +82,18 @@
 (with-eval-after-load 'org
   (require 'org-latex-preview)
   (add-hook 'org-mode-hook #'org-latex-preview-mode)
+  ;; After a short idle (window settled), refresh both latex and image
+  ;; previews. Image :center needs the final window width, which isn't set
+  ;; during org-mode setup, so re-preview here.
   (add-hook 'org-mode-hook
             (lambda ()
               (run-with-idle-timer
-               1 nil (lambda ()
-                       (when (derived-mode-p 'org-mode)
-                         (org-latex-preview '(16))))))))
+               1 nil (lambda (buf)
+                       (when (buffer-live-p buf)
+                         (with-current-buffer buf
+                           (org-latex-preview '(16))
+                           (org-link-preview '(16)))))
+               (current-buffer)))))
 
 (with-eval-after-load 'org-latex-preview
   (setq org-latex-preview-mode-display-live t
@@ -117,7 +126,9 @@
         org-hide-leading-stars t
         org-ellipsis " ▾"
         org-startup-folded 'nofold
-        org-startup-with-inline-images t)
+        org-startup-with-inline-images t
+        org-image-actual-width nil
+        org-image-align 'center)
   (add-hook 'org-mode-hook (lambda () (display-line-numbers-mode -1))))
 
 ;; Quick capture
@@ -125,6 +136,8 @@
       '(("t" "Task" entry (file "~/org/tasks.org")
          "* TODO %?\n  SCHEDULED: %t\n")
         ("w" "Work note" entry (file+olp+datetree "~/org/work.org")
+         "* %?\n%U\n")
+        ("l" "TIL" entry (file+olp+datetree "~/org/til.org")
          "* %?\n%U\n")))
 (global-set-key (kbd "C-c c") #'org-capture)
 
@@ -223,25 +236,131 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 (use-package dashboard
   :config
-  (defun my/dashboard-cheatsheet (&rest _)
-    (dashboard-insert-heading "Usefull Stuff:")
-    (insert "\n")
-    (dolist (l '("C-c x    exercise file (C-u: per topic)"
-                 "C-c c    capture (t task / w work note)"
-                 "C-x a a  agenda"
-                 "C-c n    journal entry"
-                 "C-c T    start timer (tmr)"
-                 "C-c L    distraction-free reading (logos)"
-                 "C-c P    present slides (S-up/down = flip)"
-                 "C-c t    toggle theme    C-c f  prose font"
-                 "C-x u    visual undo (vundo)"))
-      (insert l "\n")))
-  (add-to-list 'dashboard-item-generators '(cheatsheet . my/dashboard-cheatsheet))
   (setq dashboard-startup-banner (expand-file-name "gnu.png" user-emacs-directory)
         dashboard-image-banner-max-height 300
         dashboard-center-content t
-        dashboard-items '((recents . 5) (cheatsheet . 1)))
+        dashboard-items '((recents . 5)))
   (dashboard-setup-startup-hook))
+
+;; Keybinding cheatsheet in a left side window at startup. Auto-closes the
+;; first time you open a file; survives C-x b (side windows aren't reused for
+;; ordinary buffer display). Add new binds to my/cheatsheet-content.
+;; Colors come from theme faces (dashboard-heading / font-lock), so it adapts
+;; on C-c t. No mode-line on purpose: reads as a clean sidebar panel.
+(defvar my/cheatsheet-content
+  '(("Editing"
+     ("C-a"          . "line start")
+     ("C-,"          . "dup line")
+     ("M-p / M-n"    . "move line")
+     ("C-> / C-<"    . "mark next")
+     ("C-c m"        . "mark all")
+     ("C-x u"        . "undo tree"))
+    ("Search / Jump"
+     ("C-s"          . "search buf")
+     ("M-s r"        . "ripgrep")
+     ("M-g g"        . "goto line")
+     ("M-g i"        . "imenu")
+     ("M-j"          . "jump char")
+     ("M-g w"        . "jump word")
+     ("C-."          . "embark act")
+     ("C-;"          . "embark dwim")
+     ("C-x b"        . "switch buf"))
+    ("Notes / Files"
+     ("C-c c"        . "capture")
+     ("C-c c t"      . "  task")
+     ("C-c c w"      . "  work note")
+     ("C-c c l"      . "  TIL")
+     ("C-c n"        . "journal")
+     ("C-c x"        . "exercise")
+     ("C-x a"        . "agenda")
+     ("C-c e"        . "decrypt")
+     ("C-c N n"      . "denote new")
+     ("C-c N o"      . "note find")
+     ("C-c N l"      . "note link"))
+    ("Org edit"
+     ("TAB"          . "fold")
+     ("M-RET"        . "new item")
+     ("M-S-RET"      . "new TODO")
+     ("C-c C-l"      . "link")
+     ("C-c C-o"      . "open link")
+     ("C-c ."        . "timestamp")
+     ("C-c i / d"    . "math")
+     ("C-c a"        . "align env")
+     ("C-c C-x C-v"  . "images"))
+    ("Org TODO"
+     ("C-c C-t"      . "TODO/DONE")
+     ("S-left/right" . "cycle")
+     ("C-c C-s"      . "schedule")
+     ("C-c C-d"      . "deadline")
+     ("C-c C-c"      . "tags")
+     ("C-c / t"      . "todo tree"))
+    ("View / Tools"
+     ("C-c P"        . "slides")
+     ("C-c L"        . "focus mode")
+     ("C-c T"        . "timer")
+     ("C-`"          . "popper")
+     ("C-M-`"        . "popper cyc")
+     ("C-c `"        . "popper type")
+     ("C-o"          . "calc menu")
+     ("C-c w"        . "RSS elfeed")
+     ("C-c f"        . "prose font")
+     ("C-c t"        . "theme")
+     ("C-c r"        . "rename")
+     ("C-x g"        . "magit")
+     ("<f5>"         . "recompile")
+     ("C-<f5>"       . "compile"))))
+
+(defun my/cheatsheet-buffer ()
+  (with-current-buffer (get-buffer-create "*Cheatsheet*")
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (insert (propertize "  Cheatsheet\n\n"
+                          'face '(:inherit dashboard-heading :weight bold :height 1.2)))
+      (dolist (section my/cheatsheet-content)
+        (insert (propertize (concat " " (car section) "\n") 'face 'dashboard-heading))
+        (dolist (row (cdr section))
+          (insert "  "
+                  (propertize (format "%-13s" (car row)) 'face 'font-lock-function-name-face)
+                  (propertize (cdr row) 'face 'font-lock-comment-face)
+                  "\n"))
+        (insert "\n")))
+    (goto-char (point-min))
+    (special-mode)
+    (setq-local cursor-type nil
+                truncate-lines t
+                display-line-numbers nil)
+    (current-buffer)))
+
+(defun my/show-cheatsheet ()
+  (let ((w (display-buffer-in-side-window
+            (my/cheatsheet-buffer)
+            '((side . right) (window-width . 30)
+              (window-parameters . ((no-delete-other-windows . t)))))))
+    ;; Lock the width so a resize/re-eval can't grow it to a 50/50 split.
+    (when (window-live-p w)
+      (window-preserve-size w t t))
+    w))
+
+(defun my/close-cheatsheet (&rest _)
+  (when-let ((w (get-buffer-window "*Cheatsheet*")))
+    (delete-window w)))
+
+;; Own the whole startup layout so no stray *scratch* window survives:
+;; dashboard fills the frame, cheatsheet sits in the side window. Run on a
+;; short idle timer so it fires after window-setup-hook (dashboard resizes
+;; there and would otherwise clobber this).
+(defun my/startup-layout ()
+  ;; A stray splash/popup may sit in a side window; delete-other-windows
+  ;; refuses to collapse into one, so drop side windows first.
+  (when (window-with-parameter 'window-side)
+    (window-toggle-side-windows))
+  (delete-other-windows)
+  (if (fboundp 'dashboard-open) (dashboard-open) (switch-to-buffer "*scratch*"))
+  (my/show-cheatsheet))
+
+(add-hook 'emacs-startup-hook
+          (lambda () (run-with-idle-timer 0.1 nil #'my/startup-layout)))
+(add-hook 'find-file-hook #'my/close-cheatsheet)
 
 ;; which-key is built into Emacs 30, no package to install/load.
 (use-package which-key
@@ -350,6 +469,52 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package tmr
   :bind ("C-c T" . tmr))
 
+;; keycast: show the keys/command you just pressed at the far right of the
+;; mode line. The default mode line has no right-align marker, so add one
+;; before misc-info; then keycast (inserted after misc-info) lands far right.
+(use-package keycast
+  :config
+  (unless (memq 'mode-line-format-right-align (default-value 'mode-line-format))
+    (setq-default mode-line-format
+                  (mapcan (lambda (e)
+                            (if (eq e 'mode-line-misc-info)
+                                (list 'mode-line-format-right-align e)
+                              (list e)))
+                          (default-value 'mode-line-format))))
+  (setq keycast-mode-line-insert-after 'mode-line-misc-info)
+  (keycast-mode-line-mode 1))
+
+;; elfeed: RSS reader. C-c w opens it; G refreshes, RET reads in eww.
+(use-package elfeed
+  :bind ("C-c w" . elfeed)
+  :config
+  (setq elfeed-feeds
+        ;; First tag is the category (filter with s +news / +science / +fun),
+        ;; second is the specific source.
+        '(("https://archlinux.org/feeds/news/"   news arch)
+          ("https://planet.gnu.org/rss20.xml"    news gnu)
+          ("https://protesilaos.com/master.xml"  blog prot)
+          ("https://api.quantamagazine.org/feed/" science quanta)
+          ("https://xkcd.com/rss.xml"            fun xkcd)
+          ("https://www.atlasobscura.com/feeds/latest" fun atlas))))
+
+;; magit: the git UI. Deferred; only loads on C-x g.
+(use-package magit
+  :bind ("C-x g" . magit-status))
+
+;; denote: simple linked notes (Prot's). Deferred via :bind. Files live in
+;; their own dir so they don't mix with org tasks/exercises.
+(use-package denote
+  :bind (("C-c N n" . denote)
+         ("C-c N o" . denote-open-or-create)
+         ("C-c N l" . denote-link)
+         ("C-c N b" . denote-backlinks)
+         ("C-c N r" . denote-rename-file))
+  :config
+  (setq denote-directory (expand-file-name "~/Notes/denote/")
+        denote-known-keywords '("emacs" "math" "go" "writing"))
+  (denote-rename-buffer-mode 1))
+
 ;; popper: tame popup buffers (help, compilation, shell) into a toggleable stack.
 (use-package popper
   :bind (("C-`"   . popper-toggle)
@@ -360,7 +525,6 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
         '("\\*Messages\\*" "\\*Warnings\\*" "Output\\*$"
           "\\*Async Shell Command\\*" "\\*compilation\\*"
           help-mode compilation-mode eshell-mode))
-  (setq popper-group-function #'popper-group-by-project)
   (popper-mode 1)
   (popper-echo-mode 1))
 
@@ -403,6 +567,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (add-hook 'org-tree-slide-play-hook (lambda () (text-scale-increase 4)))
   (add-hook 'org-tree-slide-stop-hook (lambda () (text-scale-set 0))))
 
+(add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
+
 ;; Any load-theme disables the current theme first, so themes never stack
 ;; (raw M-x load-theme otherwise layers the new one over the old = mixed look).
 (advice-add 'load-theme :before
@@ -412,7 +578,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 ;; Softer black main background (modus default is pure #000000, too sharp).
 (defvar my/dark-theme 'modus-vivendi)
 ; (defvar my/light-theme 'modus-operandi-tritanopia)
-(defvar my/light-theme 'ef-trio-light)
+(defvar my/light-theme 'modus-operandi)
 (setq modus-vivendi-palette-overrides '((bg-main "#121212")))
 
 ;; Each theme styles its own mode-line. We clear the mode-line faces before
@@ -425,7 +591,11 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
                         :box 'unspecified :overline 'unspecified
                         :underline 'unspecified :inherit 'unspecified
                         :weight 'unspecified :height 'unspecified))
-  (load-theme theme t))
+  (load-theme theme t)
+  ;; keycast keys blend into the mode line (themes color them loud otherwise).
+  (set-face-attribute 'keycast-key nil
+                      :inherit 'mode-line :background 'unspecified
+                      :foreground 'unspecified :box nil))
 
 (defun my/toggle-theme ()
   (interactive)
@@ -537,3 +707,24 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 ;; Keep Customize's auto-writes out of init.el
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file t)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(apropospriate-theme async auctex avy casual cdlatex corfu dashboard
+			 dired-preview doom-themes ef-themes elfeed
+			 embark-consult f fontaine gruber-darker-theme
+			 keycast ledger-mode logos marginalia
+			 mixed-pitch modusregel mood-line move-text
+			 multiple-cursors olivetti orderless
+			 org-appear org-journal org-modern
+			 org-tree-slide popper pulsar solarized-theme
+			 tmr uwu-theme vertico vundo wgrep yasnippet)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
