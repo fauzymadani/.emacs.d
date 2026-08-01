@@ -257,7 +257,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("C-x u"        . "undo tree"))
     ("Search / Jump"
      ("C-s"          . "search buf")
-     ("M-s r"        . "ripgrep")
+     ("C-x p f"      . "find file")
+     ("M-s r"        . "live grep")
      ("M-g g"        . "goto line")
      ("M-g i"        . "imenu")
      ("M-j"          . "jump char")
