@@ -837,6 +837,10 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (show-paren-mode t)
 (electric-pair-mode t)
 
+;; winner-mode: undo/redo window layouts. C-c left = undo, C-c right = redo.
+;; Built in. Restores your windows after a popup/help buffer rearranges them.
+(winner-mode 1)
+
 ;; so-long: auto-detect files with very long lines (minified JS, logs) and strip
 ;; the expensive modes so they don't freeze redisplay. Built in.
 (global-so-long-mode 1)
