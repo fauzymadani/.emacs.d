@@ -580,6 +580,33 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (setq url-user-agent
       "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0")
 
+;; erc: built-in IRC. SASL logs into NickServ before joining, so restricted
+;; channels (#archlinux) admit you. Password lives in ~/.authinfo, not here.
+;; IRC nick/account come from private.el (gitignored) so they stay off GitHub.
+(defvar my/irc-nick "guest" "IRC nick; override in private.el.")
+(defvar my/irc-account nil "NickServ account for SASL; set in private.el.")
+(load (expand-file-name "private.el" user-emacs-directory) t)
+
+(use-package erc
+  :ensure nil
+  :commands (erc erc-tls)
+  :config
+  (add-to-list 'erc-modules 'sasl)
+  (erc-update-modules)
+  :custom
+  (erc-nick my/irc-nick)
+  (erc-sasl-mechanism 'plain)
+  (erc-sasl-user my/irc-account)
+  (erc-autojoin-channels-alist '(("libera.chat" "#emacs" "#archlinux")))
+  (erc-hide-list '("JOIN" "PART" "QUIT"))
+  (erc-fill-column 90))
+
+(defun my/libera ()
+  "Connect to Libera.Chat with no prompts."
+  (interactive)
+  (erc-tls :server "irc.libera.chat" :port 6697
+           :nick my/irc-nick :user my/irc-account))
+
 ;; magit: the git UI. Deferred; only loads on C-x g.
 (use-package magit
   :bind ("C-x g" . magit-status))

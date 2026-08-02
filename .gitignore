@@ -26,3 +26,6 @@ url/
 games/
 network-security.data
 package-quickstart.el
+
+# machine-local personal data (IRC handles, etc.)
+private.el
