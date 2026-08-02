@@ -523,20 +523,12 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package tmr
   :bind ("C-c T" . tmr))
 
-;; keycast: show the keys/command you just pressed at the far right of the
-;; mode line. The default mode line has no right-align marker, so add one
-;; before misc-info; then keycast (inserted after misc-info) lands far right.
+;; keycast: show the keys/command you just pressed in the tab bar, at the
+;; top-left edge of the frame ('beginning location).
 (use-package keycast
   :config
-  (unless (memq 'mode-line-format-right-align (default-value 'mode-line-format))
-    (setq-default mode-line-format
-                  (mapcan (lambda (e)
-                            (if (eq e 'mode-line-misc-info)
-                                (list 'mode-line-format-right-align e)
-                              (list e)))
-                          (default-value 'mode-line-format))))
-  (setq keycast-mode-line-insert-after 'mode-line-misc-info)
-  (keycast-mode-line-mode 1))
+  (setq keycast-tab-bar-location 'beginning)
+  (keycast-tab-bar-mode 1))
 
 ;; elfeed: RSS reader. C-c w opens it; G refreshes, RET reads in eww.
 (use-package elfeed
