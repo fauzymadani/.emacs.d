@@ -569,8 +569,16 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
           ("https://apod.nasa.gov/apod.rss"      daily apod)
           ("https://aeon.co/feed.rss"            daily aeon)
           ("https://longreads.com/feed/"         daily longreads)
-          ("https://feeds.feedburner.com/Metafilter" daily metafilter)
-          ("https://www.themarginalian.org/feed/" daily marginalian))))
+          ("https://daily.jstor.org/feed/"       daily jstor)
+          ("https://www.themarginalian.org/feed/" daily marginalian)
+          ;; esoteric: religion, mysticism, esotericism (Filip Holm, full text)
+          ("https://itsfilipholm.substack.com/feed" esoteric ltr))))
+
+;; Present a browser User-Agent for url.el fetches. Some CDNs (e.g. Substack's
+;; image proxy) refuse Emacs's default "URL/Emacs" UA, leaving gray placeholder
+;; boxes in shr where images should load.
+(setq url-user-agent
+      "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0")
 
 ;; magit: the git UI. Deferred; only loads on C-x g.
 (use-package magit
