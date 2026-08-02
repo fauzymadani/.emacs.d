@@ -29,3 +29,6 @@ package-quickstart.el
 
 # machine-local personal data (IRC handles, etc.)
 private.el
+
+# ERC chat logs (machine-local, private)
+erc-logs/

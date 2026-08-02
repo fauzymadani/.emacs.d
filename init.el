@@ -591,7 +591,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :ensure nil
   :commands (erc erc-tls)
   :config
-  (add-to-list 'erc-modules 'sasl)
+  (dolist (m '(sasl match notifications log nicks)) ; login, highlight, popup, logging, nick colors
+    (add-to-list 'erc-modules m))
   (erc-update-modules)
   :custom
   (erc-nick my/irc-nick)
@@ -599,6 +600,12 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (erc-sasl-user my/irc-account)
   (erc-autojoin-channels-alist '(("libera.chat" "#emacs" "#archlinux")))
   (erc-hide-list '("JOIN" "PART" "QUIT"))
+  (erc-timestamp-format "[%H:%M] ")
+  (erc-fill-function 'erc-fill-static)      ; align nicks in a column
+  (erc-fill-static-center 18)
+  (erc-track-exclude-types '("JOIN" "PART" "QUIT" "NICK" "MODE"))
+  (erc-log-channels-directory "~/.emacs.d/erc-logs/")
+  (erc-save-buffer-on-part t)               ; flush log when you leave/quit
   (erc-fill-column 90))
 
 (defun my/libera ()
