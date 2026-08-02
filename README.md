@@ -36,6 +36,32 @@ https://github.com/user-attachments/assets/79fcb056-3b84-4de0-b281-b8b73a2ab7db
 - **Editing extras**: duplicate line, move line, multiple cursors, smart line start, expand-region (`C-=`), rainbow-delimiters in code
 - **Languages**: C (clangd) and Go (gopls), completion via corfu + eglot
 
+## Performance
+
+Two things keep 60+ packages feeling light:
+
+**Deferred loading.** Almost every package uses `:defer` / `:hook` / `:bind`, so
+it loads the first time you actually use it rather than at launch. The startup
+cost is spread across your session instead of paid all at once.
+
+**Garbage collection (gcmh).** Emacs GC is stop-the-world: when enough garbage
+piles up, Emacs freezes to collect it. With a fixed threshold that freeze can
+land mid-keystroke. [gcmh](https://github.com/koral/gcmh) fixes the *timing*:
+
+- While you're working it holds `gc-cons-threshold` at 128 MB, so GC almost
+  never fires during typing or scrolling.
+- After each command it arms an idle timer; when you pause, it collects then,
+  then raises the threshold back up.
+- `gcmh-idle-delay` is `auto`, so the idle wait adapts to how long the last
+  collection took.
+
+So collection still happens — it just waits for the gaps between your actions.
+
+`early-init.el` suspends GC and file-name handlers during init for a faster
+launch, then an `after-init-hook` restores a safe 16 MB threshold. That restore
+runs even if `init.el` errors and before gcmh takes over, so GC is never left
+disabled: worst case falls back to the fixed 16 MB, best case gcmh smooths it.
+
 ## Requirements
 
 Fonts (install to `~/.local/share/fonts`, then `fc-cache -f`):

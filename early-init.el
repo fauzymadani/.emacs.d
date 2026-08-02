@@ -1,12 +1,15 @@
 ;;; early-init.el -*- lexical-binding: t; -*-
 
 ;; No GC and no file-name-handler lookups during startup, restored after.
-;; 16MB threshold afterwards: no constant GC churn, but not memory-hungry.
 (setq gc-cons-threshold most-positive-fixnum)
 (defvar my/file-name-handler-alist file-name-handler-alist)
 (setq file-name-handler-alist nil)
 
-(add-hook 'emacs-startup-hook
+;; Restore on after-init-hook. This runs even if init.el errors, and BEFORE
+;; emacs-startup-hook (where gcmh takes over GC). The 16MB here is a failsafe:
+;; if gcmh is ever missing/broken, GC still re-enables instead of staying off
+;; forever. gcmh then supersedes this value at runtime for smoother, idle-time GC.
+(add-hook 'after-init-hook
           (lambda ()
             (setq gc-cons-threshold (* 16 1024 1024)
                   file-name-handler-alist my/file-name-handler-alist)))

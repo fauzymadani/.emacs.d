@@ -1,5 +1,13 @@
 ;; -*- lexical-binding: t; -*-
 
+;; gcmh: run GC when Emacs is idle, not mid-keystroke, so editing never pauses.
+;; Takes over from the failsafe threshold set in early-init's after-init-hook.
+(use-package gcmh
+  :hook (emacs-startup . gcmh-mode)
+  :config
+  (setq gcmh-idle-delay 'auto                     ; GC after idle, auto-tuned
+        gcmh-high-cons-threshold (* 128 1024 1024)))
+
 ;; Font
 (set-face-attribute 'default nil :family "Martian Mono" :height 100 :weight 'regular)
 ;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
