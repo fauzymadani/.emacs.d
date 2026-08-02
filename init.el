@@ -3,11 +3,11 @@
 ;; Font
 (set-face-attribute 'default nil :family "Martian Mono" :height 100 :weight 'regular)
 ;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
-(set-face-attribute 'variable-pitch nil :family "Crimson Pro" :height 130 :weight 'regular)
+(set-face-attribute 'variable-pitch nil :family "Crimson Pro" :height 135 :weight 'regular)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 (defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)
-                        ("Crimson Pro" . 130) ("ETBookOT" . 135) ("ETBembo" . 135)))
+                        ("Crimson Pro" . 135) ("ETBookOT" . 135) ("ETBembo" . 135)))
 (defun my/set-note-font (font)
   "Set the org prose (variable-pitch) FONT and refresh open mixed-pitch buffers."
   (interactive (list (completing-read "Note font: " (mapcar #'car my/note-fonts) nil t)))
@@ -211,7 +211,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
         org-journal-file-format "%Y%m%d.org"
         org-journal-find-file #'find-file
         org-journal-enable-encryption t
-        org-crypt-key "fauzymadani3@gmail.com"
+        org-crypt-key "2CB9FE6B3550313D40F949535186C15EFF12F3E3"
         org-crypt-disable-auto-save t)
   (add-hook 'find-file-hook
             (lambda ()
@@ -265,7 +265,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("M-g w"        . "jump word")
      ("C-."          . "embark act")
      ("C-;"          . "embark dwim")
-     ("C-x b"        . "switch buf"))
+     ("C-x b"        . "switch buf")
+     ("C-x C-b"      . "buffer list"))
     ("Notes / Files"
      ("C-c c"        . "capture")
      ("C-c c t"      . "  task")
@@ -277,7 +278,9 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("C-c e"        . "decrypt")
      ("C-c N n"      . "denote new")
      ("C-c N o"      . "note find")
-     ("C-c N l"      . "note link"))
+     ("C-c N l"      . "note link")
+     ("C-c N b"      . "backlinks")
+     ("C-c N r"      . "note rename"))
     ("Org edit"
      ("TAB"          . "fold")
      ("M-RET"        . "new item")
@@ -302,12 +305,15 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("C-`"          . "popper")
      ("C-M-`"        . "popper cyc")
      ("C-c `"        . "popper type")
-     ("C-o"          . "calc menu")
+     ("C-o"          . "casual menu")
      ("C-c w"        . "RSS elfeed")
      ("C-c f"        . "prose font")
      ("C-c t"        . "theme")
      ("C-c r"        . "rename")
      ("C-c h"        . "this sheet")
+     ("C-h f"        . "help fn")
+     ("C-h v"        . "help var")
+     ("C-h k"        . "help key")
      ("C-x g"        . "magit")
      ("<f5>"         . "recompile")
      ("C-<f5>"       . "compile"))))
@@ -429,6 +435,14 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :bind (("M-j"   . avy-goto-char-timer)
          ("M-g w" . avy-goto-word-1)))
 
+;; expand-region: C-= grows the selection by semantic unit (word, sexp, line...).
+(use-package expand-region
+  :bind ("C-=" . er/expand-region))
+
+;; rainbow-delimiters: color nested parens by depth, in code buffers only.
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
 (defun super-line-toggle ()
   "Move to indentation, or to line start if already there."
   (interactive)
@@ -447,12 +461,23 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   ;; left-to-right like a normal calculator: 12000/60000*100 = 20, not 2e-3
   (setq calc-multiplication-has-precedence nil))
 
+;; ibuffer replaces the plain buffer list: richer marking, filtering, casual menu.
+(global-set-key (kbd "C-x C-b") #'ibuffer)
+
+;; casual: transient menus (like magit's). C-o in each mode; loads on first use.
 (use-package casual
-  :after calc
-  :config
-  (keymap-set calc-mode-map "C-o" #'casual-calc-tmenu)
+  :defer t
+  :init
+  (with-eval-after-load 'calc
+    (keymap-set calc-mode-map "C-o" #'casual-calc-tmenu))
   (with-eval-after-load 'calc-ext   ; calc-alg-map only exists once calc-ext is loaded
-    (keymap-set calc-alg-map "C-o" #'casual-calc-tmenu)))
+    (keymap-set calc-alg-map "C-o" #'casual-calc-tmenu))
+  (with-eval-after-load 'dired
+    (keymap-set dired-mode-map "C-o" #'casual-dired-tmenu))
+  (with-eval-after-load 'ibuffer
+    (keymap-set ibuffer-mode-map "C-o" #'casual-ibuffer-tmenu))
+  (with-eval-after-load 'info
+    (keymap-set Info-mode-map "C-o" #'casual-info-tmenu)))
 
 ;; Ledger: plain-text accounting. Loads only on ledger files, startup untouched.
 (use-package ledger-mode
@@ -475,6 +500,17 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :bind ("C-x u" . vundo)
   :config (setq vundo-roll-back-on-quit nil))
 
+;; helpful: richer C-h f/v/k/C help buffers. Loads on first help lookup.
+(use-package helpful
+  :bind (([remap describe-function] . helpful-callable)
+         ([remap describe-variable] . helpful-variable)
+         ([remap describe-key]      . helpful-key)
+         ([remap describe-command]  . helpful-command)))
+
+;; hl-todo: highlight TODO/FIXME/NOTE in code.
+(use-package hl-todo
+  :hook (prog-mode . hl-todo-mode))
+
 ;; tmr: timers for study/pomodoro. Loads on first use.
 (use-package tmr
   :bind ("C-c T" . tmr))
@@ -496,8 +532,21 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 ;; elfeed: RSS reader. C-c w opens it; G refreshes, RET reads in eww.
 (use-package elfeed
-  :bind ("C-c w" . elfeed)
+  :bind (("C-c w" . elfeed)
+         :map elfeed-show-mode-map
+         ("e" . my/elfeed-show-eww))   ; open full page/image in eww
+  :hook (elfeed-show-mode . my/elfeed-reading-setup)
   :config
+  (defun my/elfeed-reading-setup ()
+    "Center the article, wider column, no line numbers."
+    (display-line-numbers-mode -1)
+    (setq-local shr-width 90)          ; shr fills the text to ~90 chars, not narrow
+    (setq-local olivetti-body-width 95)
+    (olivetti-mode 1))
+  (defun my/elfeed-show-eww ()
+    "Open the current entry's link in eww: full page and full-size image."
+    (interactive)
+    (eww (elfeed-entry-link elfeed-show-entry)))
   (setq elfeed-feeds
         ;; First tag is the category (filter with s +news / +science / +fun),
         ;; second is the specific source.
@@ -506,7 +555,14 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
           ("https://protesilaos.com/master.xml"  blog prot)
           ("https://api.quantamagazine.org/feed/" science quanta)
           ("https://xkcd.com/rss.xml"            fun xkcd)
-          ("https://www.atlasobscura.com/feeds/latest" fun atlas))))
+          ("https://www.atlasobscura.com/feeds/latest" fun atlas)
+          ;; daily: newspaper-cadence, Atlas-style curiosity
+          ("https://feeds.kottke.org/main"       daily kottke)
+          ("https://apod.nasa.gov/apod.rss"      daily apod)
+          ("https://aeon.co/feed.rss"            daily aeon)
+          ("https://longreads.com/feed/"         daily longreads)
+          ("https://feeds.feedburner.com/Metafilter" daily metafilter)
+          ("https://www.themarginalian.org/feed/" daily marginalian))))
 
 ;; magit: the git UI. Deferred; only loads on C-x g.
 (use-package magit
@@ -696,7 +752,36 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
         dired-preview-max-size (* 2 1024 1024)  ; skip files over 2MB
         ;; don't try to preview heavy/binary types; they're what makes it lag
         dired-preview-ignored-extensions-regexp
-        "\\.\\(gz\\|zst\\|zip\\|tar\\|xz\\|rar\\|7z\\|mp4\\|mkv\\|webm\\|mp3\\|iso\\|pdf\\|dvi\\|png\\|jpe?g\\|gif\\)\\'"))
+        "\\.\\(gz\\|zst\\|zip\\|tar\\|xz\\|rar\\|7z\\|mp4\\|mkv\\|webm\\|mp3\\|iso\\|pdf\\|dvi\\|png\\|jpe?g\\|gif\\)\\'")
+  ;; never preview directories (annoying, and dired-subtree covers browsing them)
+  (advice-add 'dired-preview--preview-p :before-while
+              (lambda (file) (not (file-directory-p file)))))
+
+;; dired-subtree: expand a directory inline (like a file tree) instead of
+;; replacing the buffer. TAB toggles the subtree under point.
+(use-package dired-subtree
+  :after dired
+  :bind (:map dired-mode-map
+              ("TAB" . dired-subtree-toggle)))
+
+;; dired-narrow: live-filter the listing to matching files. Press / then type.
+(use-package dired-narrow
+  :after dired
+  :bind (:map dired-mode-map
+              ("/" . dired-narrow)))
+
+;; dired-collapse: squash single-child dir chains (src/main/java) onto one line.
+(use-package dired-collapse
+  :hook (dired-mode . dired-collapse-mode))
+
+;; dired-ranger: copy/move files across dired buffers via a paste stack.
+;; W copy, X move, Y paste (into the current dir).
+(use-package dired-ranger
+  :after dired
+  :bind (:map dired-mode-map
+              ("W" . dired-ranger-copy)
+              ("X" . dired-ranger-move)
+              ("Y" . dired-ranger-paste)))
 
 (setq make-backup-files nil)
 (setq auto-save-default nil)

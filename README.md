@@ -8,6 +8,10 @@
   Personal Emacs config for math note-taking with Org mode and LaTeX preview.
 </div>
 
+> 60+ packages, still a fast startup. Almost everything is deferred
+> (`:defer` / `:hook` / `:bind`), so packages load on first use instead of at
+> launch, and `early-init.el` suspends GC and file-name handlers during init.
+
 ![preview](preview.png)
 
 https://github.com/user-attachments/assets/79fcb056-3b84-4de0-b281-b8b73a2ab7db
@@ -22,12 +26,14 @@ https://github.com/user-attachments/assets/79fcb056-3b84-4de0-b281-b8b73a2ab7db
 - **YASnippet**: math snippets (`frac`, `int`, `sum`, `lim`, `mat`, `begin`)
 - **Dated exercise files**: `C-c x` opens a templated math exercise, `C-u C-c x` per topic
 - **Cheatsheet panel**: keybinding reference in a side window on startup
-- **RSS reader**: elfeed with categorized feeds (`C-c w`)
+- **RSS reader**: elfeed with categorized feeds (`C-c w`), daily sources (Kottke, APOD, Aeon, Longreads, MetaFilter, The Marginalian); `e` opens an entry full-page in eww
+- **Dired tree**: expand directories inline with `TAB` (dired-subtree), filter with `/`, collapse deep chains, copy/move across buffers (dired-ranger)
 - **Git**: magit (`C-x g`)
 - **Notes**: denote for linked plain-text notes (`C-c N`)
 - **keycast**: shows the last key and command in the mode line
+- **casual**: transient menus for dired, isearch, Info, ibuffer, calc (`C-o`)
 - **Themes**: modus-vivendi (dark) and modus-operandi / mindre (light), toggle with `C-c t`
-- **Editing extras**: duplicate line, move line, multiple cursors, smart line start
+- **Editing extras**: duplicate line, move line, multiple cursors, smart line start, expand-region (`C-=`), rainbow-delimiters in code
 - **Languages**: C (clangd) and Go (gopls), completion via corfu + eglot
 
 ## Requirements
@@ -88,6 +94,12 @@ and organize imports on save.
 | `C-c N` | Denote notes (`n` new, `o` find, `l` link, `b` backlinks, `r` rename) |
 | `C-c w` | Open RSS reader (elfeed) |
 | `C-x g` | Git status (magit) |
+| `C-o` | Casual menu (in dired / Info / ibuffer / calc) |
+| `TAB` | Expand/collapse directory inline (dired-subtree) |
+| `/` | Filter the listing (dired-narrow) |
+| `W` / `X` / `Y` | Copy / move / paste files across dired buffers (dired-ranger) |
+| `e` | Open the current feed entry full-page in eww (elfeed) |
+| `C-=` | Expand selection by semantic unit (expand-region) |
 | `C-c f` | Switch prose font (Crimson Pro / EB Garamond / STIX / Charis) |
 | `C-c t` | Toggle dark/light theme |
 | `C-c P` | Present slides (org-tree-slide) |
