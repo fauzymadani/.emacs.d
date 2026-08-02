@@ -693,8 +693,14 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package corfu
   :init (global-corfu-mode)
   :config (setq corfu-auto t
-                corfu-auto-delay 0.2
-                corfu-auto-prefix 2))
+                corfu-auto-delay 0.3    ; wait a bit longer so fast typing cancels
+                corfu-auto-prefix 3))   ; 3 chars: avoids filtering huge 2-char sets
+
+;; No auto-completion popup in prose: it's the costly case (orderless filtering
+;; huge word sets on every keystroke) and distracting while writing. Code keeps
+;; auto; in prose, TAB still completes on demand.
+(dolist (hook '(text-mode-hook org-mode-hook))
+  (add-hook hook (lambda () (setq-local corfu-auto nil))))
 
 ;; Emacs 30 adds ispell word-completion in text/org buffers; it errors when no
 ;; system word-list is installed. Off (we don't want dictionary-guess in corfu).
@@ -796,6 +802,21 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (global-display-line-numbers-mode t)
 (show-paren-mode t)
 (electric-pair-mode t)
+
+;; so-long: auto-detect files with very long lines (minified JS, logs) and strip
+;; the expensive modes so they don't freeze redisplay. Built in.
+(global-so-long-mode 1)
+
+;; Smoother typing: skip re-fontifying while there's pending keyboard input, so
+;; font-lock never stalls a keystroke. Redisplay catches up once you pause.
+(setq redisplay-skip-fontification-on-input t)
+
+;; Don't recompact font caches during redisplay; helps with several complex
+;; fonts loaded (Martian Mono + variable-pitch prose + Latin Modern Math).
+(setq inhibit-compacting-font-caches t)
+
+;; No blinking cursor: drops its timer and the repeated cursor redraws.
+(blink-cursor-mode -1)
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 4)
 
