@@ -661,7 +661,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (defvar my/dark-theme 'modus-vivendi)
 ; (defvar my/light-theme 'modus-operandi-tritanopia)
 (defvar my/light-theme 'modus-operandi)
-(setq modus-vivendi-palette-overrides '((bg-main "#121212")))
+; (setq modus-vivendi-palette-overrides '((bg-main "#121212")))
 
 ;; Each theme styles its own mode-line. We clear the mode-line faces before
 ;; every load so no stale override survives a toggle (the old leak bug).
