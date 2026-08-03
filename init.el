@@ -331,7 +331,18 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("C-c C-t"      . "copy mode")
      ("C-c C-c"      . "send C-c")
      ("C-c C-l"      . "clear")
-     ("C-<return>"   . "copy+exit"))))
+     ("C-<return>"   . "copy+exit"))
+    ("Mail (notmuch)"
+     ("C-c M"        . "open mail")
+     ("j"            . "jump saved search")
+     ("G"            . "fetch + index")
+     ("RET"          . "open thread")
+     ("a"            . "archive")
+     ("r / R"        . "reply / all")
+     ("C-x m"        . "new mail")
+     ("C-c C-c"      . "send")
+     ("C-c C-m s p"  . "pgp sign")
+     ("C-c C-m c p"  . "pgp encrypt"))))
 
 (defun my/cheatsheet-buffer ()
   (with-current-buffer (get-buffer-create "*Cheatsheet*")
@@ -449,6 +460,53 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 ;; vterm: real terminal (libvterm). Compiles a C module on first load.
 (use-package vterm
   :bind ("C-c v" . vterm))
+
+;; notmuch: tag-based mail. mbsync fetches Disroot into ~/Mail, notmuch indexes,
+;; msmtp sends. `G' in notmuch runs ~/.local/bin/mailsync (fetch + index).
+(use-package notmuch
+  :bind ("C-c M" . notmuch)
+  :custom
+  (user-mail-address "additionalrabbit@disroot.org")
+  (user-full-name "fauzymadani")            ; change to your display name
+  (notmuch-show-logo t)
+  (notmuch-search-oldest-first nil)         ; newest mail on top
+  (notmuch-poll-script "~/.local/bin/mailsync")
+  (notmuch-fcc-dirs "disroot/Sent")         ; keep a copy of sent mail
+  ;; saved searches, each with a `j' jump-key (press j then the letter)
+  (notmuch-saved-searches
+   '((:name "inbox"    :query "tag:inbox"            :key "i" :search-type tree)
+     (:name "unread"   :query "tag:unread"           :key "u" :search-type tree)
+     (:name "flagged"  :query "tag:flagged"          :key "f" :search-type tree)
+     (:name "today"    :query "date:today.."         :key "t" :search-type tree)
+     (:name "sent"     :query "folder:disroot/Sent"  :key "s" :search-type tree)
+     (:name "all mail" :query "*"                     :key "a" :search-type tree)))
+  ;; prettier tags: symbols/color instead of plain words
+  (notmuch-tag-formats
+   '(("unread"     (propertize tag 'face '(:foreground "#e5c07b" :weight bold)))
+     ("flagged"    (propertize "*" 'face '(:foreground "#e06c75")))
+     ("attachment" "@")
+     ("replied"    "<-")
+     ("sent"       "->")))
+  ;; thread-list columns: date | count | authors | subject | tags
+  (notmuch-search-result-format
+   '(("date" . "%12s  ")
+     ("count" . "%-7s ")
+     ("authors" . "%-20s ")
+     ("subject" . "%-54s ")
+     ("tags" . "(%s)")))
+  ;; pgp: verify/decrypt incoming, and sign outgoing with the From key
+  (notmuch-crypto-process-mime t)
+  (mml-secure-openpgp-sign-with-sender t)
+  (notmuch-hello-recent-searches-max 0)     ; drop the full-width recent-search bars
+  ;; send via msmtp
+  (message-send-mail-function 'message-send-mail-with-sendmail)
+  (sendmail-program "/usr/bin/msmtp")
+  (message-sendmail-envelope-from 'header)
+  :hook
+  ;; auto-sign every message you compose (signing needs only your key)
+  (message-setup . mml-secure-message-sign-pgpmime)
+  ;; center the hello screen in a narrow column instead of full-width stretch
+  (notmuch-hello-mode . olivetti-mode))
 
 ;; avy: jump anywhere on screen. M-j, type a couple chars, pick the match.
 (use-package avy
