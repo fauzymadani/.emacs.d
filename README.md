@@ -29,6 +29,8 @@ https://github.com/user-attachments/assets/79fcb056-3b84-4de0-b281-b8b73a2ab7db
 - **RSS reader**: elfeed with categorized feeds (`C-c w`), daily sources (Kottke, APOD, Aeon, Longreads, MetaFilter, The Marginalian); `e` opens an entry full-page in eww
 - **Dired tree**: expand directories inline with `TAB` (dired-subtree), filter with `/`, collapse deep chains, copy/move across buffers (dired-ranger)
 - **Git**: magit (`C-x g`)
+- **Mail**: notmuch, tag-based email with PGP sign/encrypt (`C-c M`); see [Mail](#mail-notmuch)
+- **Terminal**: vterm, a real libvterm terminal (`C-c v`)
 - **Notes**: denote for linked plain-text notes (`C-c N`)
 - **keycast**: shows the last key and command in the mode line
 - **casual**: transient menus for dired, isearch, Info, ibuffer, calc (`C-o`)
@@ -80,6 +82,10 @@ Tools:
 | TeX Live | LaTeX preview and PDF export |
 | clangd | C completion and errors |
 | Go + gopls | Go completion and errors |
+| isync (mbsync) | fetch mail into a local Maildir |
+| notmuch | index, tag, and search mail |
+| msmtp | send mail |
+| gnupg | PGP sign / encrypt / verify |
 
 ## Setup
 
@@ -106,6 +112,59 @@ Then open a `.c` or `.go` file. eglot starts on its own: completion pops up as
 you type, errors show inline, `M-.` jumps to a definition. Go files also gofmt
 and organize imports on save.
 
+## Mail (notmuch)
+
+notmuch is a tag-based mail reader: no folders, everything is one pool you slice
+with saved searches (`tag:inbox`, `tag:unread`). It does not fetch or send mail
+itself, so the setup is four small tools glued together:
+
+```
+mbsync  ->  ~/Mail  ->  notmuch  ->  notmuch-emacs      (read/search/tag)
+(fetch)     Maildir     (index)      msmtp              (send)
+                                     gnupg              (sign/encrypt)
+```
+
+Open it with `C-c M`. `G` inside notmuch runs `~/.local/bin/mailsync`
+(fetch + index). Press `j` then a letter to jump to a saved search
+(`i` inbox, `u` unread, `f` flagged, `t` today, `s` sent, `e` emacs list,
+`a` all mail). Outgoing mail is auto-signed with your PGP key; encrypt a message
+with `C-c C-m c p` (needs the recipient's public key imported).
+
+### Setup
+
+The config in `init.el` is machine-agnostic; the account details live in
+**gitignored `$HOME` files** so no address, password, or key is ever committed:
+
+- `~/.mbsyncrc` — IMAP server, folders, Maildir path
+- `~/.msmtprc` — SMTP server (chmod 600)
+- `~/.notmuch-config` — database path, your name/email, tag rules
+- `~/.config/mail-pass` — the mail password, read by both mbsync and msmtp (chmod 600)
+- `~/.local/bin/mailsync` — `mbsync -a && notmuch new`, plus tag rules (bound to `G`)
+- `~/.local/bin/mail-purge` — permanently delete mail tagged `deleted` (see below)
+
+Install the tools and do the first sync:
+
+```sh
+sudo pacman -S isync notmuch msmtp gnupg
+
+# fill in the four config files above for your provider, then:
+mbsync -a          # first sync, downloads everything (slow once)
+notmuch new        # index it
+```
+
+Then `C-c M` in Emacs. For signing/encryption you also need a GnuPG key whose
+UID matches your From address (`gpg --quick-generate-key "Name <you@host>"`).
+
+### Deleting mail
+
+Deletion is two deliberate steps so a stray key never loses mail:
+
+- `d` on a thread **marks** it `deleted` and hides it (reversible with
+  `notmuch tag -deleted -- tag:deleted`). Files stay on disk.
+- `mail-purge` in a terminal **permanently** removes everything tagged
+  `deleted` — deletes the local files and `mbsync` expunges them from the
+  server. It counts and asks for confirmation first.
+
 ## Keybindings
 
 | Key | Action |
@@ -120,6 +179,8 @@ and organize imports on save.
 | `C-c N` | Denote notes (`n` new, `o` find, `l` link, `b` backlinks, `r` rename) |
 | `C-c w` | Open RSS reader (elfeed) |
 | `C-x g` | Git status (magit) |
+| `C-c M` | Open mail (notmuch) |
+| `C-c v` | Open a terminal (vterm) |
 | `C-o` | Casual menu (in dired / Info / ibuffer / calc) |
 | `TAB` | Expand/collapse directory inline (dired-subtree) |
 | `/` | Filter the listing (dired-narrow) |
