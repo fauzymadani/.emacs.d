@@ -247,7 +247,28 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (setq dashboard-startup-banner (expand-file-name "gnu.png" user-emacs-directory)
         dashboard-image-banner-max-height 300
         dashboard-center-content t
-        dashboard-items '((recents . 5)))
+        dashboard-items '((recents . 5) (agenda . 5))
+        dashboard-match-agenda-entry "TODO=\"TODO\""   ; undone todos, any date
+        dashboard-filter-agenda-entry 'dashboard-no-filter-agenda
+        dashboard-agenda-release-buffers t             ; don't leave agenda files open
+        ;; clickable widgets above recent files (navigator isn't in the
+        ;; default layout, so add it to dashboard-startupify-list below)
+        dashboard-navigator-buttons
+        `((("" "IRC"     "Connect to Libera" (lambda (&rest _) (my/libera)) nil nil ,(propertize "]     " 'face 'dashboard-navigator))
+           ("" "elfeed"  "Open RSS reader"   (lambda (&rest _) (elfeed))    nil nil ,(propertize "]     " 'face 'dashboard-navigator))
+           ("" "notmuch" "Open mail"         (lambda (&rest _) (notmuch)))))
+        dashboard-startupify-list
+        '(dashboard-insert-banner
+          dashboard-insert-newline
+          dashboard-insert-banner-title
+          dashboard-insert-newline
+          dashboard-insert-init-info
+          dashboard-insert-newline
+          dashboard-insert-newline
+          dashboard-insert-navigator
+          dashboard-insert-items
+          dashboard-insert-newline
+          dashboard-insert-footer))
   (dashboard-setup-startup-hook))
 
 ;; Keybinding cheatsheet in a left side window at startup. Auto-closes the
@@ -400,6 +421,9 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (if (fboundp 'dashboard-open) (dashboard-open) (switch-to-buffer "*scratch*"))
   (my/show-cheatsheet))
 
+;; Show the dashboard as the very first buffer so no *scratch*/file flashes
+;; before the idle-timer layout (below) adds the cheatsheet side window.
+(setq initial-buffer-choice #'dashboard-open)
 (add-hook 'emacs-startup-hook
           (lambda () (run-with-idle-timer 0.1 nil #'my/startup-layout)))
 (add-hook 'find-file-hook #'my/close-cheatsheet)
@@ -524,6 +548,17 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (define-key notmuch-show-mode-map "d"
     (lambda () (interactive)
       (notmuch-show-tag '("+deleted" "-inbox")))))
+
+;; notmuch-indicator: unread count in the mode line (text, refreshed on a
+;; timer). Reflects the last `G' sync, not live server state.
+(use-package notmuch-indicator
+  :after notmuch
+  :custom
+  (notmuch-indicator-args '((:terms "tag:unread" :label "@:")))
+  (notmuch-indicator-refresh-count 60)
+  (notmuch-indicator-hide-empty-counters t)
+  :config
+  (notmuch-indicator-mode 1))
 
 ;; avy: jump anywhere on screen. M-j, type a couple chars, pick the match.
 (use-package avy
