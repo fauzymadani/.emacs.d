@@ -492,13 +492,22 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :config
   (pdf-tools-install :no-query))
 
+;; Personal identifiers (email, IRC nick/account) live in private.el
+;; (gitignored) so they stay off GitHub. Loaded here, before notmuch/erc use
+;; the vars; defvars give safe fallbacks if private.el is missing.
+(defvar my/mail-address "you@example.com" "Primary email; set in private.el.")
+(defvar my/irc-nick "guest" "IRC nick; override in private.el.")
+(defvar my/irc-account nil "NickServ account for SASL; set in private.el.")
+(load (expand-file-name "private.el" user-emacs-directory) t)
+
 ;; notmuch: tag-based mail. mbsync fetches Disroot into ~/Mail, notmuch indexes,
 ;; msmtp sends. `G' in notmuch runs ~/.local/bin/mailsync (fetch + index).
 (use-package notmuch
   :bind ("C-c M" . notmuch)
   :custom
-  (user-mail-address "additionalrabbit@disroot.org")
+  (user-mail-address my/mail-address)
   (user-full-name "fauzymadani")
+  (notmuch-address-command 'internal)       ; tab-complete recipients from past mail
   (notmuch-show-logo t)
   (notmuch-search-oldest-first nil)         ; newest mail on top
   (notmuch-poll-script "~/.local/bin/mailsync")
@@ -729,10 +738,7 @@ White text; the label \"end\" is gold and \"re\" is green."
 
 ;; erc: built-in IRC. SASL logs into NickServ before joining, so restricted
 ;; channels (#archlinux) admit you. Password lives in ~/.authinfo, not here.
-;; IRC nick/account come from private.el (gitignored) so they stay off GitHub.
-(defvar my/irc-nick "guest" "IRC nick; override in private.el.")
-(defvar my/irc-account nil "NickServ account for SASL; set in private.el.")
-(load (expand-file-name "private.el" user-emacs-directory) t)
+;; IRC nick/account come from private.el (loaded earlier, near notmuch).
 
 (use-package erc
   :ensure nil
