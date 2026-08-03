@@ -467,7 +467,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :bind ("C-c M" . notmuch)
   :custom
   (user-mail-address "additionalrabbit@disroot.org")
-  (user-full-name "fauzymadani")            ; change to your display name
+  (user-full-name "fauzymadani")
   (notmuch-show-logo t)
   (notmuch-search-oldest-first nil)         ; newest mail on top
   (notmuch-poll-script "~/.local/bin/mailsync")
@@ -479,6 +479,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      (:name "flagged"  :query "tag:flagged"          :key "f" :search-type tree)
      (:name "today"    :query "date:today.."         :key "t" :search-type tree)
      (:name "sent"     :query "folder:disroot/Sent"  :key "s" :search-type tree)
+     (:name "emacs list" :query "tag:emacs"          :key "e" :search-type tree)
      (:name "all mail" :query "*"                     :key "a" :search-type tree)))
   ;; prettier tags: symbols/color instead of plain words
   (notmuch-tag-formats
@@ -504,9 +505,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (message-sendmail-envelope-from 'header)
   :hook
   ;; auto-sign every message you compose (signing needs only your key)
-  (message-setup . mml-secure-message-sign-pgpmime)
-  ;; center the hello screen in a narrow column instead of full-width stretch
-  (notmuch-hello-mode . olivetti-mode))
+  (message-setup . mml-secure-message-sign-pgpmime))
 
 ;; avy: jump anywhere on screen. M-j, type a couple chars, pick the match.
 (use-package avy
