@@ -461,6 +461,13 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package vterm
   :bind ("C-c v" . vterm))
 
+;; pdf-tools: view/annotate PDFs in Emacs. Builds a C helper (epdfinfo) via
+;; poppler on first run; `pdf-tools-install' does it and registers the mode.
+(use-package pdf-tools
+  :magic ("%PDF" . pdf-view-mode)   ; open PDFs in pdf-view-mode automatically
+  :config
+  (pdf-tools-install :no-query))
+
 ;; notmuch: tag-based mail. mbsync fetches Disroot into ~/Mail, notmuch indexes,
 ;; msmtp sends. `G' in notmuch runs ~/.local/bin/mailsync (fetch + index).
 (use-package notmuch
