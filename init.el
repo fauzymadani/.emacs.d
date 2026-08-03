@@ -505,7 +505,18 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (message-sendmail-envelope-from 'header)
   :hook
   ;; auto-sign every message you compose (signing needs only your key)
-  (message-setup . mml-secure-message-sign-pgpmime))
+  (message-setup . mml-secure-message-sign-pgpmime)
+  :config
+  ;; `d' marks a thread deleted (hidden via exclude_tags); run mail-purge to
+  ;; actually remove files + expunge from the server. Reverse with `notmuch
+  ;; tag -deleted'.
+  (define-key notmuch-search-mode-map "d"
+    (lambda () (interactive)
+      (notmuch-search-tag '("+deleted" "-inbox" "-unread"))
+      (notmuch-search-next-thread)))
+  (define-key notmuch-show-mode-map "d"
+    (lambda () (interactive)
+      (notmuch-show-tag '("+deleted" "-inbox")))))
 
 ;; avy: jump anywhere on screen. M-j, type a couple chars, pick the match.
 (use-package avy
