@@ -4,9 +4,13 @@
 (setq mc/cmds-to-run-for-all
       '(
         vundo
+        wdired-finish-edit
         ))
 
 (setq mc/cmds-to-run-once
       '(
+        dired
+        find-file
         org-self-insert-command
+        wdired--self-insert
         ))

@@ -267,6 +267,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("C-s"          . "search buf")
      ("C-x p f"      . "find file")
      ("M-s r"        . "live grep")
+     ("M-s f"        . "find by name")
      ("M-g g"        . "goto line")
      ("M-g i"        . "imenu")
      ("M-j"          . "jump char")
@@ -324,7 +325,13 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("C-h k"        . "help key")
      ("C-x g"        . "magit")
      ("<f5>"         . "recompile")
-     ("C-<f5>"       . "compile"))))
+     ("C-<f5>"       . "compile"))
+    ("Terminal (vterm)"
+     ("C-c v"        . "open vterm")
+     ("C-c C-t"      . "copy mode")
+     ("C-c C-c"      . "send C-c")
+     ("C-c C-l"      . "clear")
+     ("C-<return>"   . "copy+exit"))))
 
 (defun my/cheatsheet-buffer ()
   (with-current-buffer (get-buffer-create "*Cheatsheet*")
@@ -406,7 +413,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
          ("C-s"   . consult-line)
          ("M-g g" . consult-goto-line)
          ("M-g i" . consult-imenu)
-         ("M-s r" . consult-ripgrep)))   ; project-wide text search (needs rg)
+         ("M-s r" . consult-ripgrep)     ; project-wide text search (needs rg)
+         ("M-s f" . consult-find)))      ; recursive filename search
 
 ;; wgrep: make a grep/embark-export buffer editable, save edits back to files.
 ;; Flow: M-s r -> C-. (embark) export -> C-c C-p edit -> C-c C-c save all.
@@ -437,6 +445,10 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :bind (("C->" . mc/mark-next-like-this)
          ("C-<" . mc/mark-previous-like-this)
          ("C-c m" . mc/mark-all-like-this)))
+
+;; vterm: real terminal (libvterm). Compiles a C module on first load.
+(use-package vterm
+  :bind ("C-c v" . vterm))
 
 ;; avy: jump anywhere on screen. M-j, type a couple chars, pick the match.
 (use-package avy
