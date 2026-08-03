@@ -521,7 +521,40 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 ;; tmr: timers for study/pomodoro. Loads on first use.
 (use-package tmr
-  :bind ("C-c T" . tmr))
+  :bind ("C-c T" . tmr)
+  :config
+  (defun my/tmr-mode-line ()
+    "The soonest active tmr timer as [tmr; end: HH:MM; re: LEFT], else empty.
+White text; the label \"end\" is gold and \"re\" is green."
+    (let ((active (seq-remove #'tmr--timer-finishedp tmr--timers)))
+      (if active
+          (let* ((soonest (car (seq-sort-by #'tmr--timer-end-date
+                                            #'time-less-p active)))
+                 (end (format-time-string "%H:%M" (tmr--timer-end-date soonest)))
+                 (rem (tmr--format-remaining soonest))
+                 (w '(:foreground "white"))
+                 (g '(:foreground "#e06c75"))   ; "end" label (red)
+                 (r '(:foreground "#98c379")))  ; "re" label
+            (concat (propertize " [tmr; " 'face w)
+                    (propertize "end"     'face g)
+                    (propertize ": "      'face w)
+                    (propertize end       'face w)
+                    (propertize "; "      'face w)
+                    (propertize "re"      'face r)
+                    (propertize ": "      'face w)
+                    (propertize rem       'face w)
+                    (propertize "] "      'face w)))
+        "")))
+  ;; Append a right-align marker + the TMR segment at the very END of the mode
+  ;; line, so ONLY the timer floats to the right edge. misc-info (eglot status,
+  ;; etc.) keeps its normal position. `member' guard keeps eval-buffer idempotent.
+  (let ((seg '(:eval (my/tmr-mode-line))))
+    (unless (member seg (default-value 'mode-line-format))
+      (setq-default mode-line-format
+                    (append (default-value 'mode-line-format)
+                            (list 'mode-line-format-right-align seg)))))
+  ;; ponytail: 1s poll refreshes the countdown; no-op when no timer runs.
+  (run-with-timer 1 1 (lambda () (when tmr--timers (force-mode-line-update t)))))
 
 ;; keycast: show the keys/command you just pressed in the tab bar, at the
 ;; top-left edge of the frame ('beginning location).
@@ -590,6 +623,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   (erc-nick my/irc-nick)
   (erc-sasl-mechanism 'plain)
   (erc-sasl-user my/irc-account)
+  (erc-sasl-auth-source-function #'erc-auth-source-search) ; read pass from ~/.authinfo
+
   (erc-autojoin-channels-alist '(("libera.chat" "#emacs" "#archlinux")))
   (erc-hide-list '("JOIN" "PART" "QUIT"))
   (erc-timestamp-format "[%H:%M] ")
