@@ -11,7 +11,7 @@
 ;; Font
 (set-face-attribute 'default nil :family "Martian Mono" :height 100 :weight 'regular)
 ;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
-(set-face-attribute 'variable-pitch nil :family "Crimson Pro" :height 135 :weight 'regular)
+(set-face-attribute 'variable-pitch nil :family "Charis" :height 125 :weight 'regular)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 (defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)
@@ -244,12 +244,21 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 (use-package dashboard
   :config
-  ;; Pick a random png from banners/ each launch (drop more in to add variety).
+  ;; Random png from banners/ each launch, never the same as last time.
+  ;; Last pick is remembered in banners/.last across restarts.
   (setq dashboard-startup-banner
-        (let ((pngs (directory-files
-                     (expand-file-name "banners" user-emacs-directory) t "\\.png\\'")))
-          (if pngs (seq-random-elt pngs)
-            (expand-file-name "flamel.png" user-emacs-directory)))  ; fallback
+        (let* ((dir  (expand-file-name "banners" user-emacs-directory))
+               (last (expand-file-name ".last" dir))
+               (prev (and (file-exists-p last)
+                          (with-temp-buffer (insert-file-contents last)
+                                            (string-trim (buffer-string)))))
+               (pngs (directory-files dir t "\\.png\\'"))
+               ;; exclude prev unless it's the only one
+               (pool (or (and (cdr pngs) (delete prev (copy-sequence pngs))) pngs))
+               (pick (if pool (seq-random-elt pool)
+                       (expand-file-name "flamel.png" user-emacs-directory))))
+          (ignore-errors (with-temp-file last (insert pick)))
+          pick)
         dashboard-image-banner-max-height 300
         dashboard-center-content t
         dashboard-items '((recents . 5) (agenda . 5))
