@@ -15,7 +15,8 @@
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 (defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)
-                        ("Crimson Pro" . 135) ("ETBookOT" . 135) ("ETBembo" . 135)))
+                        ("Crimson Pro" . 135) ("ETBookOT" . 135) ("ETBembo" . 135)
+                        ("IBM Plex Sans" . 135) ("Hanken Grotesk" . 130)))
 (defun my/set-note-font (font)
   "Set the org prose (variable-pitch) FONT and refresh open mixed-pitch buffers."
   (interactive (list (completing-read "Note font: " (mapcar #'car my/note-fonts) nil t)))
@@ -865,7 +866,31 @@ Permanent, but reappears on next `G' if the feed still lists it."
   (setq org-tree-slide-slide-in-effect nil       ; no animation, instant snap
         org-tree-slide-skip-outline-level 8)
   (add-hook 'org-tree-slide-play-hook (lambda () (text-scale-increase 4)))
-  (add-hook 'org-tree-slide-stop-hook (lambda () (text-scale-set 0))))
+  (add-hook 'org-tree-slide-stop-hook
+            (lambda () (text-scale-set 0) (org-fold-show-all))))  ; unfold on exit
+
+;; org-present: minimalist slideshow. Alternative to tree-slide; M-x org-present
+;; starts it, q / C-c C-q quits, left/right move. Zoom via text-scale (NOT face
+;; :height, which breaks olivetti's centering math); olivetti stays on and
+;; centers the scaled text. Kept alongside tree-slide, not replacing it.
+(use-package org-present
+  :config
+  (defun my/org-present-start ()
+    (text-scale-set 4)                      ; big text; olivetti follows text-scale
+    (setq header-line-format " ")           ; blank line of top padding
+    (org-display-inline-images)
+    (olivetti-set-width 0.85))              ; center at 85% of the frame
+  (defun my/org-present-end ()
+    (text-scale-set 0)
+    (setq header-line-format nil)
+    (org-remove-inline-images)
+    (olivetti-set-width 68))                ; back to the org default
+  (defun my/org-present-slide (&rest _)
+    "Fold everything but the current slide's subtree."
+    (org-overview) (org-show-entry) (org-show-children))
+  (add-hook 'org-present-mode-hook #'my/org-present-start)
+  (add-hook 'org-present-mode-quit-hook #'my/org-present-end)
+  (add-hook 'org-present-after-navigate-functions #'my/org-present-slide))
 
 (add-to-list 'custom-theme-load-path "~/.emacs.d/themes/")
 
