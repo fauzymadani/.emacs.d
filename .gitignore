@@ -32,3 +32,4 @@ private.el
 
 # ERC chat logs (machine-local, private)
 erc-logs/
+banners/.last

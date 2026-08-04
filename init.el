@@ -711,6 +711,10 @@ White text; the label \"end\" is gold and \"re\" is green."
   :config
   (keycast-tab-bar-mode 1))
 
+;; shr/eww: ignore page-declared colors so dark mode isn't broken by white
+;; backgrounds; text/links follow the active theme instead.
+(setq shr-use-colors nil)
+
 ;; elfeed: RSS reader. C-c w opens it; G refreshes, RET reads in eww.
 (use-package elfeed
   :bind (("C-c w" . elfeed)
