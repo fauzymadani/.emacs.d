@@ -244,7 +244,12 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 (use-package dashboard
   :config
-  (setq dashboard-startup-banner (expand-file-name "gnu.png" user-emacs-directory)
+  ;; Pick a random png from banners/ each launch (drop more in to add variety).
+  (setq dashboard-startup-banner
+        (let ((pngs (directory-files
+                     (expand-file-name "banners" user-emacs-directory) t "\\.png\\'")))
+          (if pngs (seq-random-elt pngs)
+            (expand-file-name "flamel.png" user-emacs-directory)))  ; fallback
         dashboard-image-banner-max-height 300
         dashboard-center-content t
         dashboard-items '((recents . 5) (agenda . 5))
