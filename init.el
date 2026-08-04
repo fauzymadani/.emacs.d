@@ -12,6 +12,9 @@
 (set-face-attribute 'default nil :family "Martian Mono" :height 100 :weight 'regular)
 ;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
 (set-face-attribute 'variable-pitch nil :family "Charis" :height 125 :weight 'regular)
+;; fixed-pitch (code/tables/inline code via mixed-pitch) was inheriting the 100
+;; default and looked tiny next to 125 prose; 1.2 relative brings it up to match.
+(set-face-attribute 'fixed-pitch nil :family "Martian Mono" :height 1.2)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 (defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)
@@ -869,25 +872,95 @@ Permanent, but reappears on next `G' if the feed still lists it."
   (add-hook 'org-tree-slide-stop-hook
             (lambda () (text-scale-set 0) (org-fold-show-all))))  ; unfold on exit
 
-;; org-present: minimalist slideshow. Alternative to tree-slide; M-x org-present
-;; starts it, q / C-c C-q quits, left/right move. Zoom via text-scale (NOT face
-;; :height, which breaks olivetti's centering math); olivetti stays on and
-;; centers the scaled text. Kept alongside tree-slide, not replacing it.
+;; org-present: minimalist slideshow made to feel like a real deck, not just
+;; big centered text. On start: fullscreen, mode line hidden, tall empty header
+;; line to drop content off the top edge, bigger title/headings, airier line
+;; spacing. Zoom is via text-scale (NOT the default face :height, which breaks
+;; olivetti's centering); heading/header remaps don't touch `default`, so
+;; centering survives. q / C-c C-q restores everything. Kept alongside
+;; tree-slide, not replacing it.
 (use-package org-present
   :config
+  (defvar-local my/op--fra nil)           ; saved face-remapping-alist (mixed-pitch)
+  (defvar-local my/op--mode-line nil)     ; saved mode-line-format
+  (defvar-local my/op--fullscreen nil)    ; saved frame fullscreen state
+  (defvar-local my/op--pad -1)            ; last vertical pad, to skip no-op recenters
   (defun my/org-present-start ()
-    (text-scale-set 4)                      ; big text; olivetti follows text-scale
-    (setq header-line-format " ")           ; blank line of top padding
+    ;; layout: fullscreen, no mode line, content pushed down from the top
+    (setq my/op--fullscreen (frame-parameter nil 'fullscreen))
+    (set-frame-parameter nil 'fullscreen 'fullboth)
+    (setq my/op--mode-line mode-line-format)
+    (setq-local mode-line-format nil)
+    (setq-local line-spacing 0.25)        ; airier lines
+    ;; cover: hide the raw "#+TITLE:"/"#+AUTHOR:" labels so the first slide
+    ;; reads as a title card (values stay, styled by org-document-title/-info)
+    (setq-local org-hidden-keywords '(title author date email))
+    ;; type: big body via text-scale; bigger title/headings + an accent underline
+    ;; on slide titles via remaps that leave `default' alone (append to
+    ;; mixed-pitch's alist to keep prose proportional)
+    (setq my/op--fra face-remapping-alist)
+    (setq-local face-remapping-alist
+                (append '((header-line default default)  ; blend pad into the bg
+                          (org-document-title (:height 2.0) org-document-title)
+                          (org-level-1 (:height 1.5 :underline t) org-level-1)
+                          (org-level-2 (:height 1.3) org-level-2))
+                        my/op--fra))
+    (text-scale-set 4)
     (org-display-inline-images)
-    (olivetti-set-width 0.85))              ; center at 85% of the frame
+    (font-lock-flush)                     ; apply hidden-keywords now
+    (olivetti-set-width 0.8)              ; tighter centered column, deck-like
+    ;; re-center vertically when the frame settles (fullscreen resize) or resizes
+    (add-hook 'window-configuration-change-hook #'my/org-present-vcenter nil t)
+    (my/org-present-vcenter))
   (defun my/org-present-end ()
-    (text-scale-set 0)
+    (set-frame-parameter nil 'fullscreen my/op--fullscreen)
+    (setq-local mode-line-format my/op--mode-line)
+    (remove-hook 'window-configuration-change-hook #'my/org-present-vcenter t)
     (setq header-line-format nil)
+    (kill-local-variable 'line-spacing)
+    (kill-local-variable 'org-hidden-keywords)
+    (setq-local face-remapping-alist my/op--fra)
+    (text-scale-set 0)
     (org-remove-inline-images)
-    (olivetti-set-width 68))                ; back to the org default
+    (font-lock-flush)
+    (olivetti-set-width 68))              ; back to the org default
+  (defun my/org-present-vcenter (&rest _)
+    "Pad the header line so the current (narrowed) slide is vertically centered.
+Centers against total window height, so padding never feeds back into the
+measurement. Tall slides get zero pad and stay top-aligned."
+    (when (bound-and-true-p org-present-mode)
+      (let* ((content (cdr (window-text-pixel-size
+                            nil (point-min) (point-max))))
+             (pad (max 0 (/ (- (window-pixel-height) content) 2))))
+        (unless (= pad my/op--pad)          ; no-op if unchanged: no loop, no churn
+          (setq my/op--pad pad
+                header-line-format
+                (and (> pad 0)
+                     (propertize " " 'display `(space :height (,pad)))))))))
   (defun my/org-present-slide (&rest _)
-    "Fold everything but the current slide's subtree."
-    (org-overview) (org-show-entry) (org-show-children))
+    "Fold everything but the current slide's subtree, then re-center."
+    (org-overview) (org-show-entry) (org-show-children)
+    (my/org-present-vcenter))
+  ;; slide counter in the tab bar (shown only while presenting). Scans the
+  ;; widened buffer for top-level (`* ') headings and finds which one the
+  ;; current narrowed slide starts at. O(headings) per redisplay,
+  ;; fine for slide-sized files.
+  (defun my/org-present-tab-counter ()
+    (when (bound-and-true-p org-present-mode)
+      (let ((start (point-min)) (total 0) (cur 0))
+        (save-excursion
+          (save-restriction
+            (widen)
+            (goto-char (point-min))
+            (while (re-search-forward "^\\* " nil t)
+              (setq total (1+ total))
+              (when (<= (line-beginning-position) start) (setq cur total)))))
+        ;; counter (non-clickable) + a clickable [x quit] button, in case the
+        ;; quit keybind slips your mind mid-talk.
+        `((org-present-counter menu-item ,(format "  %d/%d  " cur total) ignore)
+          (org-present-quit menu-item "[x quit]  " org-present-quit
+                            :help "Quit the presentation")))))
+  (add-to-list 'tab-bar-format #'my/org-present-tab-counter t)
   (add-hook 'org-present-mode-hook #'my/org-present-start)
   (add-hook 'org-present-mode-quit-hook #'my/org-present-end)
   (add-hook 'org-present-after-navigate-functions #'my/org-present-slide))
