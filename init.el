@@ -684,23 +684,34 @@ White text; the label \"end\" is gold and \"re\" is green."
       (setq-default mode-line-format
                     (append (default-value 'mode-line-format)
                             (list 'mode-line-format-right-align seg)))))
-  ;; ponytail: 1s poll refreshes the countdown; no-op when no timer runs.
+  ;; 1s poll refreshes the countdown; no-op when no timer runs.
   (run-with-timer 1 1 (lambda () (when tmr--timers (force-mode-line-update t)))))
 
-;; keycast: show the keys/command you just pressed in the tab bar, at the
-;; top-left edge of the frame ('beginning location).
+;; No close (x) / new (+) buttons on the tab bar.
+(setq tab-bar-close-button-show nil
+      tab-bar-new-button-show nil)
+
+;; keycast: show the keys/command you just pressed at the far right of the
+;; tab bar (default location right-aligns it).
 (use-package keycast
   :config
-  (setq keycast-tab-bar-location 'beginning)
   (keycast-tab-bar-mode 1))
 
 ;; elfeed: RSS reader. C-c w opens it; G refreshes, RET reads in eww.
 (use-package elfeed
   :bind (("C-c w" . elfeed)
+         :map elfeed-search-mode-map
+         ("D" . my/elfeed-delete)      ; purge selected entries from the db
          :map elfeed-show-mode-map
          ("e" . my/elfeed-show-eww))   ; open full page/image in eww
   :hook (elfeed-show-mode . my/elfeed-reading-setup)
   :config
+  (defun my/elfeed-delete ()
+    "Delete the selected entries from the elfeed database.
+Permanent, but reappears on next `G' if the feed still lists it."
+    (interactive)
+    (elfeed-db-delete (elfeed-search-selected))
+    (elfeed-search-update :force))
   (defun my/elfeed-reading-setup ()
     "Center the article, wider column, no line numbers."
     (display-line-numbers-mode -1)
@@ -847,10 +858,8 @@ White text; the label \"end\" is gold and \"re\" is green."
 
 ;; Theme: dark = modus-vivendi, light = modus-operandi-tritanopia.
 ;; Softer black main background (modus default is pure #000000, too sharp).
-(defvar my/dark-theme 'modus-vivendi)
-; (defvar my/light-theme 'modus-operandi-tritanopia)
-(defvar my/light-theme 'modus-operandi)
-; (setq modus-vivendi-palette-overrides '((bg-main "#121212")))
+(defvar my/dark-theme 'ef-trio-dark)
+(defvar my/light-theme 'ef-trio-light)
 
 ;; Each theme styles its own mode-line. We clear the mode-line faces before
 ;; every load so no stale override survives a toggle (the old leak bug).
