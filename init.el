@@ -219,7 +219,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :bind ("C-c n" . org-journal-new-entry)
   :config
   (setq org-journal-dir "~/org/journal/"
-        org-journal-file-type 'weekly
+        org-journal-file-type 'monthly
         org-journal-file-format "%Y%m%d.org"
         org-journal-find-file #'find-file
         org-journal-enable-encryption t
@@ -754,10 +754,8 @@ Permanent, but reappears on next `G' if the feed still lists it."
           ("https://xkcd.com/rss.xml"            fun xkcd)
           ("https://www.atlasobscura.com/feeds/latest" fun atlas)
           ;; daily: newspaper-cadence, Atlas-style curiosity
-          ("https://feeds.kottke.org/main"       daily kottke)
           ("https://apod.nasa.gov/apod.rss"      daily apod)
           ("https://aeon.co/feed.rss"            daily aeon)
-          ("https://longreads.com/feed/"         daily longreads)
           ("https://daily.jstor.org/feed/"       daily jstor)
           ("https://www.themarginalian.org/feed/" daily marginalian)
           ;; esoteric: religion, mysticism, esotericism (Filip Holm, full text)
@@ -1153,6 +1151,17 @@ measurement. Tall slides get zero pad and stay top-aligned."
 (setq recentf-max-saved-items 50)
 (repeat-mode 1)                       ; after C-x o, press o o o; same for other repeats
 (delete-selection-mode 1)             ; typing replaces the active region
+
+;; sr-speedbar: dock the file browser in the same frame (no popup frame),
+;; on the left, like a normal file explorer. speedbar-use-images keeps the
+;; classic bitmap icons. M-x sr-speedbar-toggle.
+(use-package sr-speedbar
+  :bind ("<f8>" . sr-speedbar-toggle)
+  :init
+  (setq sr-speedbar-right-side nil
+        sr-speedbar-width 30
+        speedbar-use-images t
+        speedbar-show-unknown-files t))  ; show extensionless files (yasnippet, etc.)
 
 ;; Keep Customize's auto-writes out of init.el
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
