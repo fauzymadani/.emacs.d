@@ -265,7 +265,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
           pick)
         dashboard-image-banner-max-height 300
         dashboard-center-content t
-        dashboard-items '((recents . 5) (agenda . 5))
+        dashboard-items '((recents . 5) (recentdirs . 5) (agenda . 5))
         dashboard-match-agenda-entry "TODO=\"TODO\""   ; undone todos, any date
         dashboard-filter-agenda-entry 'dashboard-no-filter-agenda
         dashboard-agenda-release-buffers t             ; don't leave agenda files open
@@ -287,6 +287,18 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
           dashboard-insert-items
           dashboard-insert-newline
           dashboard-insert-footer))
+  ;; Custom "Recent Directories" section: parent folders of recent files.
+  ;; Clicking one opens dired there. No extra tracking; recentf already has them.
+  (defun dashboard-insert-recentdirs (list-size)
+    (dashboard-insert-section
+     "Recent Directories:"
+     (seq-take (delete-dups (mapcar #'file-name-directory recentf-list)) list-size)
+     list-size
+     'recentdirs
+     "d"
+     `(lambda (&rest _) (dired ,el))
+     (abbreviate-file-name el)))
+  (add-to-list 'dashboard-item-generators '(recentdirs . dashboard-insert-recentdirs))
   (dashboard-setup-startup-hook))
 
 ;; Keybinding cheatsheet in a left side window at startup. Auto-closes the
@@ -827,9 +839,19 @@ Permanent, but reappears on next `G' if the feed still lists it."
   (setq popper-reference-buffers
         '("\\*Messages\\*" "\\*Warnings\\*" "Output\\*$"
           "\\*Async Shell Command\\*" "\\*compilation\\*"
-          help-mode compilation-mode eshell-mode))
+          "\\*grep\\*" "\\*xref\\*" "\\*Occur\\*" "\\*Apropos\\*" "\\*Man .*\\*"
+          help-mode compilation-mode eshell-mode
+          flymake-diagnostics-buffer-mode))
   (popper-mode 1)
   (popper-echo-mode 1))
+
+;; Stop Emacs from splitting my windows to show a new buffer. Reuse a window
+;; already showing it, else open in the window I'm in. Popups (above) still go
+;; to popper's bottom stack; this only governs ordinary buffers.
+(setq switch-to-buffer-obey-display-actions t
+      display-buffer-base-action
+      '((display-buffer-reuse-window display-buffer-same-window))
+      even-window-sizes nil)
 
 ;; logos: distraction-free reading; org headings become slides. Loads on key.
 (use-package logos
