@@ -501,7 +501,8 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 ;; vterm: real terminal (libvterm). Compiles a C module on first load.
 (use-package vterm
-  :bind ("C-c v" . vterm))
+  :bind (("C-c v" . vterm)              ; reuse/switch to *vterm*
+         ("C-c V" . (lambda () (interactive) (vterm t)))))  ; always a new session
 
 ;; pdf-tools: view/annotate PDFs in Emacs. Builds a C helper (epdfinfo) via
 ;; poppler on first run; `pdf-tools-install' does it and registers the mode.
@@ -1145,6 +1146,7 @@ measurement. Tall slides get zero pad and stay top-aligned."
 (setq-default tab-width 4)
 
 ;; Session state + editing niceties (all built-in)
+(global-auto-revert-mode 1)           ; reload buffers when the file changes on disk (Claude Code edits, git, etc.)
 (save-place-mode 1)                   ; reopen files at last cursor position
 (savehist-mode 1)                     ; persist minibuffer history across restarts
 (recentf-mode 1)                      ; track recent files (dashboard uses this)
@@ -1160,7 +1162,7 @@ measurement. Tall slides get zero pad and stay top-aligned."
   :init
   (setq sr-speedbar-right-side nil
         sr-speedbar-width 30
-        speedbar-use-images t
+        speedbar-use-images nil
         speedbar-show-unknown-files t))  ; show extensionless files (yasnippet, etc.)
 
 ;; Keep Customize's auto-writes out of init.el
