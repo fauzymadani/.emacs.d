@@ -39,7 +39,14 @@
 (scroll-bar-mode -1)
 (fringe-mode 0)
 
-;; Mode-line extras: column number + file size
+(setq display-line-numbers-type t)
+(global-display-line-numbers-mode +1)
+(defun my/toggle-line-number-style ()
+  "Flip this buffer between relative and absolute line numbers."
+  (interactive)
+  (setq display-line-numbers (if (eq display-line-numbers 'relative) t 'relative)))
+(global-set-key (kbd "<f6>") #'my/toggle-line-number-style)  ; relative <-> absolute
+
 (column-number-mode 1)
 (size-indication-mode 1)
 
@@ -763,12 +770,12 @@ Permanent, but reappears on next `G' if the feed still lists it."
         '(("https://archlinux.org/feeds/news/"   news arch)
           ("https://planet.gnu.org/rss20.xml"    news gnu)
           ("https://protesilaos.com/master.xml"  blog prot)
-          ("https://api.quantamagazine.org/feed/" science quanta)
+          ;; ("https://api.quantamagazine.org/feed/" science quanta)
           ("https://xkcd.com/rss.xml"            fun xkcd)
-          ("https://www.atlasobscura.com/feeds/latest" fun atlas)
+          ;; ("https://www.atlasobscura.com/feeds/latest" fun atlas)
           ;; daily: newspaper-cadence, Atlas-style curiosity
           ("https://apod.nasa.gov/apod.rss"      daily apod)
-          ("https://aeon.co/feed.rss"            daily aeon)
+          ;; ("https://aeon.co/feed.rss"            daily aeon)
           ("https://daily.jstor.org/feed/"       daily jstor)
           ("https://www.themarginalian.org/feed/" daily marginalian)
           ;; esoteric: religion, mysticism, esotericism (Filip Holm, full text)
