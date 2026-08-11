@@ -151,13 +151,22 @@
   (add-hook 'org-mode-hook (lambda () (display-line-numbers-mode -1))))
 
 ;; Quick capture
+(setq org-log-done 'time            ; stamp the time when a task is marked DONE
+      org-log-into-drawer t         ; tuck all notes/logs into a :LOGBOOK: drawer
+      org-log-reschedule 'note)     ; ask why when you move a scheduled date
+
+(global-set-key (kbd "C-c l") #'org-store-link)  
+(setq org-id-link-to-org-use-id 'create-if-interactive) 
+
 (setq org-capture-templates
       '(("t" "Task" entry (file "~/org/tasks.org")
          "* TODO %?\n  SCHEDULED: %t\n")
         ("w" "Work note" entry (file+olp+datetree "~/org/work.org")
          "* %?\n%U\n")
         ("l" "TIL" entry (file+olp+datetree "~/org/til.org")
-         "* %?\n%U\n")))
+         "* %?\n%U\n")
+        ("m" "Meeting" entry (file "~/org/tasks.org")
+         "* %? :meeting:\n  %^T\n")))
 (global-set-key (kbd "C-c c") #'org-capture)
 
 ;; Math exercise files
@@ -859,6 +868,13 @@ Permanent, but reappears on next `G' if the feed still lists it."
       display-buffer-base-action
       '((display-buffer-reuse-window display-buffer-same-window))
       even-window-sizes nil)
+
+;; ...but the org date-picker calendar should be a short strip at the bottom,
+;; not fill a whole window like the base-action would make it.
+(add-to-list 'display-buffer-alist
+             '("\\*Calendar\\*"
+               (display-buffer-at-bottom)
+               (window-height . fit-window-to-buffer)))
 
 ;; logos: distraction-free reading; org headings become slides. Loads on key.
 (use-package logos
