@@ -861,21 +861,6 @@ Permanent, but reappears on next `G' if the feed still lists it."
   (popper-mode 1)
   (popper-echo-mode 1))
 
-;; Stop Emacs from splitting my windows to show a new buffer. Reuse a window
-;; already showing it, else open in the window I'm in. Popups (above) still go
-;; to popper's bottom stack; this only governs ordinary buffers.
-(setq switch-to-buffer-obey-display-actions t
-      display-buffer-base-action
-      '((display-buffer-reuse-window display-buffer-same-window))
-      even-window-sizes nil)
-
-;; ...but the org date-picker calendar should be a short strip at the bottom,
-;; not fill a whole window like the base-action would make it.
-(add-to-list 'display-buffer-alist
-             '("\\*Calendar\\*"
-               (display-buffer-at-bottom)
-               (window-height . fit-window-to-buffer)))
-
 ;; logos: distraction-free reading; org headings become slides. Loads on key.
 (use-package logos
   :bind (("C-c L" . logos-focus-mode)
