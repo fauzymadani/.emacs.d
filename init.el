@@ -31,7 +31,6 @@
         (mixed-pitch-mode 1)))))
 (global-set-key (kbd "C-c f") #'my/set-note-font)
 
-;; UI cleanup
 (setq inhibit-startup-screen t)
 (menu-bar-mode -1)
 (tool-bar-mode -1)
@@ -62,6 +61,8 @@
 
 ;; Packages: load-path first so the org fork shadows built-in org
 (add-to-list 'load-path "~/.emacs.d/elpa/org-mode/lisp/")
+;; load local lips module
+(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 (require 'package)
 (setq package-archives
       '(("melpa" . "https://melpa.org/packages/")
@@ -320,7 +321,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
           dashboard-insert-newline
           dashboard-insert-footer))
   ;; Custom "Recent Directories" section: parent folders of recent files.
-  ;; Clicking one opens dired there. No extra tracking; recentf already has them.
+  ;; Clicking one opens dired there.
   (defun dashboard-insert-recentdirs (list-size)
     (dashboard-insert-section
      "Recent Directories:"
@@ -729,38 +730,15 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package tmr
   :bind ("C-c T" . tmr)
   :config
-  (defun my/tmr-mode-line ()
-    "The soonest active tmr timer as [tmr; end: HH:MM; re: LEFT], else empty.
-White text; the label \"end\" is gold and \"re\" is green."
-    (let ((active (seq-remove #'tmr--timer-finishedp tmr--timers)))
-      (if active
-          (let* ((soonest (car (seq-sort-by #'tmr--timer-end-date
-                                            #'time-less-p active)))
-                 (end (format-time-string "%H:%M" (tmr--timer-end-date soonest)))
-                 (rem (tmr--format-remaining soonest))
-                 (w '(:foreground "white"))
-                 (g '(:foreground "#e06c75"))   ; "end" label (red)
-                 (r '(:foreground "#98c379")))  ; "re" label
-            (concat (propertize " [tmr; " 'face w)
-                    (propertize "end"     'face g)
-                    (propertize ": "      'face w)
-                    (propertize end       'face w)
-                    (propertize "; "      'face w)
-                    (propertize "re"      'face r)
-                    (propertize ": "      'face w)
-                    (propertize rem       'face w)
-                    (propertize "] "      'face w)))
-        "")))
-  ;; Append a right-align marker + the TMR segment at the very END of the mode
-  ;; line, so ONLY the timer floats to the right edge. misc-info (eglot status,
-  ;; etc.) keeps its normal position. `member' guard keeps eval-buffer idempotent.
-  (let ((seg '(:eval (my/tmr-mode-line))))
-    (unless (member seg (default-value 'mode-line-format))
-      (setq-default mode-line-format
-                    (append (default-value 'mode-line-format)
-                            (list 'mode-line-format-right-align seg)))))
-  ;; 1s poll refreshes the countdown; no-op when no timer runs.
+  ;; my/tmr-mode-line is defined in lisp/my-modeline.el and referenced there.
+  ;; The 1s poll refreshes the countdown display; no-op when no timer is active.
   (run-with-timer 1 1 (lambda () (when tmr--timers (force-mode-line-update t)))))
+
+;; my-modeline: bespoke Refined Classic mode-line (lisp/my-modeline.el).
+;; :ensure nil = local file, not a MELPA package. Loaded eagerly at startup;
+;; the tmr segment is guarded with fboundp so it's safe before tmr is loaded.
+(use-package my-modeline
+  :ensure nil)
 
 ;; No close (x) / new (+) buttons on the tab bar.
 (setq tab-bar-close-button-show nil
