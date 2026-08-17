@@ -740,6 +740,10 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package my-modeline
   :ensure nil)
 
+;; my-blog: quick org-mode blog post creation and ox-publish helper
+(use-package my-blog
+  :ensure nil)
+
 ;; No close (x) / new (+) buttons on the tab bar.
 (setq tab-bar-close-button-show nil
       tab-bar-new-button-show nil)
