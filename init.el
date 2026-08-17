@@ -9,12 +9,11 @@
         gcmh-high-cons-threshold (* 128 1024 1024)))
 
 ;; Font
-(set-face-attribute 'default nil :family "Martian Mono" :height 100 :weight 'regular)
+(set-face-attribute 'default nil :family "JetBrainsMono Nerd Font Mono" :height 105 :weight 'regular)
 ;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
 (set-face-attribute 'variable-pitch nil :family "Charis" :height 125 :weight 'regular)
-;; fixed-pitch (code/tables/inline code via mixed-pitch) was inheriting the 100
-;; default and looked tiny next to 125 prose; 1.2 relative brings it up to match.
-(set-face-attribute 'fixed-pitch nil :family "Martian Mono" :height 1.2)
+;; fixed-pitch (code/tables/inline code via mixed-pitch)
+(set-face-attribute 'fixed-pitch nil :family "JetBrainsMono Nerd Font Mono" :height 1.0)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 (defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)
@@ -45,7 +44,10 @@
   "Flip this buffer between relative and absolute line numbers."
   (interactive)
   (setq display-line-numbers (if (eq display-line-numbers 'relative) t 'relative)))
-(global-set-key (kbd "<f6>") #'my/toggle-line-number-style)  ; relative <-> absolute
+(global-set-key (kbd "<f6>") #'my/toggle-line-number-style)  
+
+;; Make default new tab show dashboard buffer
+(setopt tab-bar-new-tab-choice "*dashboard*")
 
 (column-number-mode 1)
 (size-indication-mode 1)
@@ -254,7 +256,21 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 (use-package mixed-pitch
   :hook (org-mode . mixed-pitch-mode)
-  :config (setq mixed-pitch-set-height t))
+  :config
+  ;; Set height for prose (variable-pitch), but do NOT lock fixed-pitch faces
+  ;; to an absolute pixel size so that text-scale (org-present, org-tree-slide) scales both.
+  (setq mixed-pitch-set-height nil)
+  (advice-add 'mixed-pitch-mode :around
+              (lambda (orig-fn &rest args)
+                (let ((mixed-pitch-set-height nil))
+                  (apply orig-fn args))
+                (when mixed-pitch-mode
+                  (let ((var-pitch (face-attribute mixed-pitch-face :family))
+                        (var-height (face-attribute mixed-pitch-face :height))
+                        (var-weight (face-attribute mixed-pitch-face :weight)))
+                    (face-remap-remove-relative mixed-pitch-variable-cookie)
+                    (setq mixed-pitch-variable-cookie
+                          (face-remap-add-relative 'default :family var-pitch :height var-height :weight var-weight)))))))
 
 (use-package olivetti
   :hook (org-mode . olivetti-mode)
@@ -538,6 +554,18 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :magic ("%PDF" . pdf-view-mode)   ; open PDFs in pdf-view-mode automatically
   :config
   (pdf-tools-install :no-query))
+
+;; NOTE: To be investigated later
+;; emacs uniline for drawing diagram using unicode
+;; uniline (from MELPA) — Transient frontend
+(use-package transient) ;; ensure transient is installed
+;; NOTE: Use font with full unicode support to use this package in order to make lines render smoothly
+(use-package uniline-transient
+  :ensure uniline
+  :after transient
+  :commands (uniline-mode uniline-launch-interface)
+  :config
+  (global-set-key (kbd "C-<insert>") #'uniline-launch-interface))
 
 ;; Personal identifiers (email, IRC nick/account) live in private.el
 ;; (gitignored) so they stay off GitHub. Loaded here, before notmuch/erc use
@@ -1003,7 +1031,7 @@ measurement. Tall slides get zero pad and stay top-aligned."
 
 ;; Theme: dark = modus-vivendi, light = modus-operandi-tritanopia.
 ;; Softer black main background (modus default is pure #000000, too sharp).
-(defvar my/dark-theme 'ef-trio-dark)
+(defvar my/dark-theme 'ef-cherie)
 (defvar my/light-theme 'ef-trio-light)
 
 ;; Each theme styles its own mode-line. We clear the mode-line faces before
