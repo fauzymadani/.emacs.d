@@ -40,4 +40,3 @@
 
 (provide 'my-blog)
 ;;; my-blog.el ends here
-;; ponytail: pure interactive elisp function; avoids heavy capture/templating packages.

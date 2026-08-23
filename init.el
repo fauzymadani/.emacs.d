@@ -2,6 +2,7 @@
 
 ;; gcmh: run GC when Emacs is idle, not mid-keystroke, so editing never pauses.
 ;; Takes over from the failsafe threshold set in early-init's after-init-hook.
+;; NOTE: in case emacs is hanging, run `pkill -USR2 emacs'
 (use-package gcmh
   :hook (emacs-startup . gcmh-mode)
   :config
@@ -32,7 +33,8 @@
 (global-set-key (kbd "C-c f") #'my/set-note-font)
 
 (setq inhibit-startup-screen t)
-(menu-bar-mode -1)
+(setq tool-bar-style 'text)
+(menu-bar-mode 1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (fringe-mode 0)
@@ -823,7 +825,7 @@ Permanent, but reappears on next `G' if the feed still lists it."
   (erc-sasl-user my/irc-account)
   (erc-sasl-auth-source-function #'erc-auth-source-search) ; read pass from ~/.authinfo
 
-  (erc-autojoin-channels-alist '(("libera.chat" "#emacs" "#archlinux")))
+  (erc-autojoin-channels-alist '(("libera.chat" "#emacs")))
   (erc-hide-list '("JOIN" "PART" "QUIT"))
   (erc-timestamp-format "[%H:%M] ")
   (erc-fill-function 'erc-fill-static)      ; align nicks in a column
@@ -1011,10 +1013,8 @@ measurement. Tall slides get zero pad and stay top-aligned."
 (advice-add 'load-theme :before
             (lambda (&rest _) (mapc #'disable-theme custom-enabled-themes)))
 
-;; Theme: dark = modus-vivendi, light = modus-operandi-tritanopia.
-;; Softer black main background (modus default is pure #000000, too sharp).
-(defvar my/dark-theme 'ef-cherie)
-(defvar my/light-theme 'ef-trio-light)
+(defvar my/dark-theme 'ef-dream)
+(defvar my/light-theme 'modus-operandi-tinted)
 
 ;; Each theme styles its own mode-line. We clear the mode-line faces before
 ;; every load so no stale override survives a toggle (the old leak bug).
@@ -1094,6 +1094,9 @@ measurement. Tall slides get zero pad and stay top-aligned."
         (gomod "https://github.com/camdencheek/tree-sitter-go-mod")))
 (add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
 (add-to-list 'auto-mode-alist '("/go\\.mod\\'" . go-mod-ts-mode))
+
+(with-eval-after-load 'org
+  (add-to-list 'org-src-lang-modes '("go" . go-ts)))
 
 (defun my/go-format-on-save ()
   (when (eglot-managed-p)
