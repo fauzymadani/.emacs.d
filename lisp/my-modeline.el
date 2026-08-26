@@ -21,7 +21,9 @@
   "Render buffer name."
   (propertize "%b"
               'face 'mode-line-buffer-id
-              'help-echo (or (buffer-file-name) (buffer-name))))
+              'mouse-face 'mode-line-highlight
+              'help-echo (or (buffer-file-name) (buffer-name))
+              'local-map mode-line-buffer-identification-keymap))
 
 (defun my-modeline--narrow ()
   "Display [Narrow] when buffer is narrowed."
@@ -30,15 +32,31 @@
 
 (defun my-modeline--size ()
   "Display buffer/file size via %I (e.g. 12k, 1.4M)."
-  (format-mode-line " %I"))
+  (propertize (format-mode-line " %I")
+              'mouse-face 'mode-line-highlight
+              'help-echo "Buffer size"))
 
 (defun my-modeline--major-mode ()
-  "Display the major mode name, safely rendered via format-mode-line."
-  (propertize (format "(%s)" (format-mode-line mode-name))
-              'help-echo (format "Major mode: %s\nmouse-1: Major mode menu"
-                                 (format-mode-line mode-name))
-              'mouse-face 'mode-line-highlight
-              'local-map mode-line-major-mode-keymap))
+  "Display major mode and active minor mode lighters"
+  (propertize
+   (format-mode-line '("(" mode-name minor-mode-alist ")"))
+   'help-echo (format "Major mode: %s\nmouse-1: Major mode menu"
+                       (format-mode-line mode-name))
+   'mouse-face 'mode-line-highlight
+   'local-map mode-line-major-mode-keymap))
+
+(defun my-modeline--eol ()
+  "Return \" on Unix/Dos/Mac\" (clickable) based on buffer EOL type."
+  (let ((label (pcase (coding-system-eol-type buffer-file-coding-system)
+                 (0 "on Unix") (1 "on Dos") (2 "on Mac") (_ nil))))
+    (when label
+      (propertize (concat " " label)
+                  'mouse-face 'mode-line-highlight
+                  'help-echo "mouse-1: Toggle line ending"
+                  'local-map (let ((map (make-sparse-keymap)))
+                               (define-key map [mode-line mouse-1]
+                                 #'mode-line-change-eol)
+                               map)))))
 
 (defun my-modeline--vc ()
   "Display version control (Git) status if present."
@@ -84,6 +102,7 @@ Requires the `tmr' package.  Safely returns \"\" when tmr is not loaded."
      '(:eval (my-modeline--narrow))
      "  "
      '(:eval (my-modeline--major-mode))
+     '(:eval (my-modeline--eol))
      mode-line-process
 
      ;; Right Alignment Anchor (Emacs 29+) 

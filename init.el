@@ -68,7 +68,8 @@
 (require 'package)
 (setq package-archives
       '(("melpa" . "https://melpa.org/packages/")
-        ("gnu"   . "https://elpa.gnu.org/packages/")))
+        ("gnu"   . "https://elpa.gnu.org/packages/")
+        ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
 (package-initialize)
 
 (unless (package-installed-p 'use-package)
@@ -209,8 +210,16 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 
 (global-set-key (kbd "C-c x") #'my/new-exercise)
 
-(setq org-agenda-files '("~/org/tasks.org" "~/Notes/Exercise/"))
+(setq org-agenda-files '("~/org/tasks.org"))
 (global-set-key (kbd "C-x a") #'org-agenda)
+
+(use-package org-super-agenda
+  :after org
+  :config
+  (setq org-super-agenda-groups
+        '((:name "All tasks"
+           :anything t)))
+  (org-super-agenda-mode 1))
 
 ;; Packages
 (use-package auctex :defer t)
@@ -551,12 +560,12 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
   :bind (("C-c v" . vterm)              ; reuse/switch to *vterm*
          ("C-c V" . (lambda () (interactive) (vterm t)))))  ; always a new session
 
-;; pdf-tools: view/annotate PDFs in Emacs. Builds a C helper (epdfinfo) via
-;; poppler on first run; `pdf-tools-install' does it and registers the mode.
 (use-package pdf-tools
-  :magic ("%PDF" . pdf-view-mode)   ; open PDFs in pdf-view-mode automatically
+  :magic ("%PDF" . pdf-view-mode)
   :config
-  (pdf-tools-install :no-query))
+  (pdf-tools-install :no-query)
+  (add-hook 'pdf-view-mode-hook (lambda () (display-line-numbers-mode -1)))
+  (add-hook 'pdf-view-mode-hook (lambda () (pdf-cache-prefetch-minor-mode -1))))
 
 ;; NOTE: To be investigated later
 ;; emacs uniline for drawing diagram using unicode
@@ -746,9 +755,7 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 (use-package my-blog
   :ensure nil)
 
-;; No close (x) / new (+) buttons on the tab bar.
-(setq tab-bar-close-button-show nil
-      tab-bar-new-button-show nil)
+(setq tab-bar-new-button-show nil)
 
 ;; keycast: show the keys/command you just pressed at the far right of the
 ;; tab bar (default location right-aligns it).
@@ -1013,7 +1020,7 @@ measurement. Tall slides get zero pad and stay top-aligned."
 (advice-add 'load-theme :before
             (lambda (&rest _) (mapc #'disable-theme custom-enabled-themes)))
 
-(defvar my/dark-theme 'ef-dream)
+(defvar my/dark-theme 'doom-badger)
 (defvar my/light-theme 'modus-operandi-tinted)
 
 ;; Each theme styles its own mode-line. We clear the mode-line faces before
@@ -1098,6 +1105,16 @@ measurement. Tall slides get zero pad and stay top-aligned."
 (with-eval-after-load 'org
   (add-to-list 'org-src-lang-modes '("go" . go-ts)))
 
+;; Babel
+(use-package ob-go :ensure t)
+
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)
+     (shell . t)
+     (go . t)))) ;; add more as needed
+
 (defun my/go-format-on-save ()
   (when (eglot-managed-p)
     (ignore-errors (eglot-code-actions nil nil "source.organizeImports" t))
@@ -1130,7 +1147,7 @@ measurement. Tall slides get zero pad and stay top-aligned."
         dired-preview-max-size (* 2 1024 1024)  ; skip files over 2MB
         ;; don't try to preview heavy/binary types; they're what makes it lag
         dired-preview-ignored-extensions-regexp
-        "\\.\\(gz\\|zst\\|zip\\|tar\\|xz\\|rar\\|7z\\|mp4\\|mkv\\|webm\\|mp3\\|iso\\|pdf\\|dvi\\|png\\|jpe?g\\|gif\\)\\'")
+        "\\.\\(gz\\|zst\\|zip\\|tar\\|xz\\|rar\\|7z\\|mp4\\|mkv\\|webm\\|mp3\\|iso\\|dvi\\|png\\|jpe?g\\|gif\\)\\'")
   ;; never preview directories (annoying, and dired-subtree covers browsing them)
   (advice-add 'dired-preview--preview-p :before-while
               (lambda (file) (not (file-directory-p file)))))
@@ -1163,7 +1180,6 @@ measurement. Tall slides get zero pad and stay top-aligned."
 
 (setq make-backup-files nil)
 (setq auto-save-default nil)
-(global-display-line-numbers-mode t)
 (show-paren-mode t)
 (electric-pair-mode t)
 
