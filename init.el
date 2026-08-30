@@ -10,11 +10,11 @@
         gcmh-high-cons-threshold (* 128 1024 1024)))
 
 ;; Font
-(set-face-attribute 'default nil :family "JetBrainsMono Nerd Font Mono" :height 105 :weight 'regular)
+(set-face-attribute 'default nil :family "JetBrainsMono Nerd Font" :height 105 :weight 'regular)
 ;; :weight regular so prose doesn't inherit the default face's medium (looks bold)
 (set-face-attribute 'variable-pitch nil :family "Charis" :height 125 :weight 'regular)
 ;; fixed-pitch (code/tables/inline code via mixed-pitch)
-(set-face-attribute 'fixed-pitch nil :family "JetBrainsMono Nerd Font Mono" :height 1.0)
+(set-face-attribute 'fixed-pitch nil :family "JetBrainsMono Nerd Font" :height 1.0)
 (setf (alist-get "Latin Modern Math" face-font-rescale-alist nil nil #'equal) 1.25)
 
 (defvar my/note-fonts '(("EB Garamond" . 135) ("STIX Two Text" . 125) ("Charis" . 125)
@@ -45,7 +45,7 @@
   "Flip this buffer between relative and absolute line numbers."
   (interactive)
   (setq display-line-numbers (if (eq display-line-numbers 'relative) t 'relative)))
-(global-set-key (kbd "<f6>") #'my/toggle-line-number-style)  
+(global-set-key (kbd "<f6>") #'my/toggle-line-number-style)
 
 ;; Make default new tab show dashboard buffer
 (setopt tab-bar-new-tab-choice "*dashboard*")
@@ -127,7 +127,27 @@
         org-latex-preview-persist-expiry 30
         org-latex-preview-process-precompile t
         org-latex-preview-process-active-indicator nil)
-  (plist-put org-format-latex-options :background "Transparent")
+  ;; Keep preview contrast in sync with the active theme, but avoid a large
+  ;; all-buffers rebuild unless the actual preview color state changes.
+  (defvar my/org-latex-preview-theme-state nil)
+  (defun my/org-latex-preview-sync-theme (&optional buffer)
+    (let* ((dark-p (memq my/dark-theme custom-enabled-themes))
+           (fg (if dark-p "white" "black"))
+           (bg "Transparent")
+           (state (list fg bg)))
+      (when (or (not my/org-latex-preview-theme-state)
+                (not (equal state my/org-latex-preview-theme-state)))
+        (plist-put org-format-latex-options :foreground fg)
+        (plist-put org-format-latex-options :background bg)
+        (plist-put org-latex-preview-appearance-options :foreground fg)
+        (plist-put org-latex-preview-appearance-options :background bg)
+        (let ((buf (or buffer (current-buffer))))
+          (when (buffer-live-p buf)
+            (with-current-buffer buf
+              (when (derived-mode-p 'org-mode)
+                (org-latex-preview-clear-cache)
+                (org-latex-preview '(16))))))
+        (setq my/org-latex-preview-theme-state state))))
   (plist-put org-latex-preview-appearance-options :scale 1.0)
   (plist-put org-latex-preview-appearance-options :zoom
              (+ (/ (face-attribute 'default :height) 100.0) 0.15)))
@@ -161,8 +181,8 @@
       org-log-into-drawer t         ; tuck all notes/logs into a :LOGBOOK: drawer
       org-log-reschedule 'note)     ; ask why when you move a scheduled date
 
-(global-set-key (kbd "C-c l") #'org-store-link)  
-(setq org-id-link-to-org-use-id 'create-if-interactive) 
+(global-set-key (kbd "C-c l") #'org-store-link)
+(setq org-id-link-to-org-use-id 'create-if-interactive)
 
 (setq org-capture-templates
       '(("t" "Task" entry (file "~/org/tasks.org")
@@ -380,11 +400,10 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
      ("C-c x"        . "exercise")
      ("C-x a"        . "agenda")
      ("C-c e"        . "decrypt")
-     ("C-c N n"      . "denote new")
-     ("C-c N o"      . "note find")
-     ("C-c N l"      . "note link")
-     ("C-c N b"      . "backlinks")
-     ("C-c N r"      . "note rename"))
+     ("C-c N n"      . "roam capture")
+     ("C-c N o"      . "roam find")
+     ("C-c N l"      . "roam link")
+     ("C-c N b"      . "roam backlinks"))
     ("Org edit"
      ("TAB"          . "fold")
      ("M-RET"        . "new item")
@@ -748,8 +767,18 @@ separate exercise-<date>-<topic>.org so two topics on one day don't collide."
 ;; my-modeline: bespoke Refined Classic mode-line (lisp/my-modeline.el).
 ;; :ensure nil = local file, not a MELPA package. Loaded eagerly at startup;
 ;; the tmr segment is guarded with fboundp so it's safe before tmr is loaded.
-(use-package my-modeline
-  :ensure nil)
+;; (use-package my-modeline
+;;   :ensure nil)
+
+(use-package doom-modeline
+  :ensure t
+  :config
+  ;; Official Doom Modeline way to keep long filenames compact without
+  ;; replacing the whole mode-line implementation.
+  (setq doom-modeline-buffer-file-name-style 'truncate-upto-project
+        doom-modeline-project-detection 'project
+        doom-modeline-buffer-encoding nil)
+  :init (doom-modeline-mode 1))
 
 ;; my-blog: quick org-mode blog post creation and ox-publish helper
 (use-package my-blog
@@ -852,18 +881,26 @@ Permanent, but reappears on next `G' if the feed still lists it."
 (use-package magit
   :bind ("C-x g" . magit-status))
 
-;; denote: simple linked notes (Prot's). Deferred via :bind. Files live in
-;; their own dir so they don't mix with org tasks/exercises.
-(use-package denote
-  :bind (("C-c N n" . denote)
-         ("C-c N o" . denote-open-or-create)
-         ("C-c N l" . denote-link)
-         ("C-c N b" . denote-backlinks)
-         ("C-c N r" . denote-rename-file))
+(use-package org-roam
+  :init
+  (setq org-roam-v2-ack t)
+  :bind (("C-c N n" . org-roam-capture)
+         ("C-c N o" . org-roam-node-find)
+         ("C-c N l" . org-roam-node-insert)
+         ("C-c N b" . org-roam-buffer-toggle))
   :config
-  (setq denote-directory (expand-file-name "~/Notes/denote/")
-        denote-known-keywords '("emacs" "math" "go" "writing"))
-  (denote-rename-buffer-mode 1))
+  (setq org-roam-directory (expand-file-name "~/Notes/org-roam/")
+        org-roam-completion-everywhere t)
+  (org-roam-db-autosync-mode 1))
+
+(use-package org-roam-ui
+  :after org-roam
+  :bind ("C-c N g" . org-roam-ui-mode)
+  :config
+  (setq org-roam-ui-sync-theme t
+        org-roam-ui-follow t
+        org-roam-ui-update-on-save t
+        org-roam-ui-open-on-start nil))
 
 ;; popper: tame popup buffers (help, compilation, shell) into a toggleable stack.
 (use-package popper
@@ -1020,8 +1057,8 @@ measurement. Tall slides get zero pad and stay top-aligned."
 (advice-add 'load-theme :before
             (lambda (&rest _) (mapc #'disable-theme custom-enabled-themes)))
 
-(defvar my/dark-theme 'doom-badger)
-(defvar my/light-theme 'modus-operandi-tinted)
+(defvar my/dark-theme 'doom-one)
+(defvar my/light-theme 'doom-one-light)
 
 ;; Each theme styles its own mode-line. We clear the mode-line faces before
 ;; every load so no stale override survives a toggle (the old leak bug).
@@ -1034,6 +1071,8 @@ measurement. Tall slides get zero pad and stay top-aligned."
                         :underline 'unspecified :inherit 'unspecified
                         :weight 'unspecified :height 'unspecified))
   (load-theme theme t)
+  (when (fboundp #'my/org-latex-preview-sync-theme)
+    (my/org-latex-preview-sync-theme (current-buffer)))
   ;; keycast keys blend into the mode line (themes color them loud otherwise).
   (set-face-attribute 'keycast-key nil
                       :inherit 'mode-line :background 'unspecified
@@ -1080,7 +1119,7 @@ measurement. Tall slides get zero pad and stay top-aligned."
   :hook (c-mode . eglot-ensure)
   :bind (:map eglot-mode-map ("C-c r" . eglot-rename)))
 
-;; Extra color in C buffers only; 
+;; Extra color in C buffers only;
 (defun my/c-extra-colors ()
   (dolist (pair '((font-lock-type-face          . "#2ac3de")
                   (font-lock-function-name-face . "#7aa2f7")

@@ -17,13 +17,24 @@
    (format-mode-line mode-line-modified)
    (format-mode-line mode-line-remote)))
 
+(defcustom my-modeline-buffer-id-max-width 30
+  "Maximum display width for the buffer name in the mode-line.
+Longer names (e.g. denote-style filenames) are truncated with an ellipsis."
+  :type 'integer
+  :group 'my-modeline)
+
 (defun my-modeline--buffer-id ()
-  "Render buffer name."
-  (propertize "%b"
-              'face 'mode-line-buffer-id
-              'mouse-face 'mode-line-highlight
-              'help-echo (or (buffer-file-name) (buffer-name))
-              'local-map mode-line-buffer-identification-keymap))
+  "Render buffer name, truncated to `my-modeline-buffer-id-max-width'."
+  (let* ((raw (format-mode-line "%b"))
+         (name (if (> (string-width raw) my-modeline-buffer-id-max-width)
+                   (truncate-string-to-width
+                    raw my-modeline-buffer-id-max-width nil nil "…")
+                 raw)))
+    (propertize name
+                'face 'mode-line-buffer-id
+                'mouse-face 'mode-line-highlight
+                'help-echo (or (buffer-file-name) (buffer-name))
+                'local-map mode-line-buffer-identification-keymap)))
 
 (defun my-modeline--narrow ()
   "Display [Narrow] when buffer is narrowed."
